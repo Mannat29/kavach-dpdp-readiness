@@ -1,7 +1,7 @@
 import json
 import os
 import tempfile
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, Response
 
 from app.db import get_db, init_db
 from app.inventory import (
@@ -644,3 +644,319 @@ def api_rights_download(request_id: int):
         as_attachment=True,
         download_name=f"erasure_request_{request_id}.zip",
     )
+
+
+# ---------------------------------------------------------------------------
+# Breach Blast-Radius Simulator Endpoints
+# ---------------------------------------------------------------------------
+@bp.route("/api/breach/scenarios", methods=["GET"])
+def api_breach_scenarios():
+    """List available breach scenarios."""
+    from app.breach import load_scenarios
+    scenarios = load_scenarios()
+    return jsonify({"scenarios": scenarios})
+
+
+@bp.route("/api/breach/simulate", methods=["POST"])
+def api_breach_simulate():
+    """Execute a breach blast-radius simulation.
+    
+    Body JSON:
+    - scenario (str, required)
+    - aware_at (str ISO timestamp, optional)
+    - device_protected (str: 'unknown'|'yes'|'no', optional)
+    - sources (list of str, required if scenario == 'custom')
+    """
+    conn = get_db()
+    init_db()
+    data = request.get_json(silent=True) or {}
+    scenario = data.get("scenario")
+    if not scenario:
+        return jsonify({"error": "scenario is required"}), 400
+
+    aware_at = data.get("aware_at")
+    device_protected = data.get("device_protected", "unknown")
+    sources = data.get("sources")
+
+    from app.breach import simulate
+    try:
+        result = simulate(
+            scenario=scenario,
+            aware_at=aware_at,
+            device_protected=device_protected,
+            sources=sources,
+            conn=conn,
+        )
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Simulation failed: {str(e)}"}), 500
+
+
+@bp.route("/api/breach/<int:sim_id>", methods=["GET"])
+def api_breach_get(sim_id: int):
+    """Retrieve an existing breach simulation by ID."""
+    conn = get_db()
+    init_db()
+    from app.breach import get_simulation
+    sim = get_simulation(sim_id, conn)
+    if not sim:
+        return jsonify({"error": f"Breach simulation {sim_id} not found"}), 404
+    return jsonify(sim)
+
+
+@bp.route("/api/breach/<int:sim_id>/recipients", methods=["GET"])
+def api_breach_recipients(sim_id: int):
+    """Retrieve recipient list for a simulation."""
+    conn = get_db()
+    init_db()
+    from app.breach import get_simulation
+    sim = get_simulation(sim_id, conn)
+    if not sim:
+        return jsonify({"error": f"Breach simulation {sim_id} not found"}), 404
+    return jsonify({
+        "simulation_id": sim_id,
+        "scenario": sim["scenario"],
+        "recipients": sim["recipients"],
+        "total_count": len(sim["recipients"]),
+        "disclaimer": sim.get("recipients_disclaimer", "The tool cannot send anything. Notices must be sent manually."),
+    })
+
+
+@bp.route("/api/breach/<int:sim_id>/export", methods=["GET"])
+def api_breach_export(sim_id: int):
+    """Export single printable HTML page with all drafts and checklist, no raw PII."""
+    import html
+    conn = get_db()
+    init_db()
+    from app.breach import get_simulation
+    sim = get_simulation(sim_id, conn)
+    if not sim:
+        return jsonify({"error": f"Breach simulation {sim_id} not found"}), 404
+
+    scenario_title = html.escape(sim.get("scenario_title", sim.get("scenario", "Breach Simulation")))
+    aware_at = html.escape(str(sim.get("aware_at", "N/A")))
+    severity = html.escape(str(sim.get("severity", "unknown")).upper())
+    counts = sim.get("counts", {})
+    records_count = html.escape(str(counts.get("records_count", 0)))
+    people_range = html.escape(str(counts.get("range", counts.get("people_count", 0))))
+    confirmed_count = html.escape(str(counts.get("confirmed_count", 0)))
+    possible_count = html.escape(str(counts.get("possible_count", 0)))
+
+    checklist_items = sim.get("first_hour_checklist", [])
+    checklist_html = "".join(
+        f'<li><label><input type="checkbox" /> {html.escape(step)}</label></li>'
+        for step in checklist_items
+    )
+
+    drafts = sim.get("drafts", {})
+    board_intimation = html.escape(drafts.get("board_intimation", "No draft available"))
+    detailed_report = html.escape(drafts.get("board_detailed_report", "No draft available"))
+    individual_notice = html.escape(drafts.get("individual_notice", "No draft available"))
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Kavach Incident Simulation Pack - {scenario_title}</title>
+  <style>
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      margin: 0;
+      padding: 24px;
+      background: #f9fafb;
+    }}
+    .container {{
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }}
+    .banner {{
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }}
+    .print-btn {{
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      float: right;
+    }}
+    .print-btn:hover {{
+      background: #1d4ed8;
+    }}
+    .meta-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: #f3f4f6;
+      border-radius: 6px;
+    }}
+    .meta-label {{
+      font-weight: 600;
+      color: #4b5563;
+      font-size: 12px;
+      text-transform: uppercase;
+    }}
+    .meta-val {{
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+      margin-top: 4px;
+    }}
+    h1 {{
+      font-size: 24px;
+      margin-top: 0;
+      color: #111827;
+    }}
+    h2 {{
+      font-size: 18px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 8px;
+      margin-top: 32px;
+      color: #111827;
+    }}
+    .checklist {{
+      list-style: none;
+      padding: 0;
+    }}
+    .checklist li {{
+      padding: 8px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }}
+    .checklist label {{
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+    }}
+    .checklist input {{
+      margin-right: 12px;
+      margin-top: 4px;
+    }}
+    pre {{
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 16px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      color: #334155;
+    }}
+    .disclaimer-box {{
+      margin-top: 32px;
+      padding: 16px;
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #92400e;
+    }}
+    @media print {{
+      body {{
+        background: #ffffff;
+        padding: 0;
+      }}
+      .container {{
+        box-shadow: none;
+        padding: 0;
+        width: 100%;
+        max-width: none;
+      }}
+      .print-btn {{
+        display: none;
+      }}
+      .banner {{
+        border-color: #000000;
+        color: #000000;
+        background: #eeeeee;
+      }}
+      h2 {{
+        page-break-after: avoid;
+      }}
+      pre {{
+        page-break-inside: avoid;
+        border: 1px solid #cccccc;
+      }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+    <div class="banner">DRAFT, SIMULATION &mdash; REVIEW BEFORE SENDING &mdash; NOT LEGAL ADVICE</div>
+
+    <h1>Breach Response Simulation Pack</h1>
+    <p>This document contains simulated incident blast-radius analysis, the initial first-hour response checklist, and statutory notification draft templates generated for review.</p>
+
+    <div class="meta-grid">
+      <div>
+        <div class="meta-label">Scenario</div>
+        <div class="meta-val">{scenario_title}</div>
+      </div>
+      <div>
+        <div class="meta-label">Assessed Severity</div>
+        <div class="meta-val">{severity}</div>
+      </div>
+      <div>
+        <div class="meta-label">Compromised Records</div>
+        <div class="meta-val">{records_count}</div>
+      </div>
+      <div>
+        <div class="meta-label">Affected People (Range)</div>
+        <div class="meta-val">{people_range}</div>
+      </div>
+      <div>
+        <div class="meta-label">Confirmed / Possible</div>
+        <div class="meta-val">{confirmed_count} / {possible_count}</div>
+      </div>
+      <div>
+        <div class="meta-label">Awareness Time</div>
+        <div class="meta-val">{aware_at}</div>
+      </div>
+    </div>
+
+    <h2>1. First-Hour Incident Checklist</h2>
+    <ul class="checklist">
+      {checklist_html}
+    </ul>
+
+    <h2>2. Draft: Section 8(6) Board Intimation</h2>
+    <pre>{board_intimation}</pre>
+
+    <h2>3. Draft: Rule 7 Detailed Report Skeleton</h2>
+    <pre>{detailed_report}</pre>
+
+    <h2>4. Draft: Notice to Affected Individuals</h2>
+    <pre>{individual_notice}</pre>
+
+    <div class="disclaimer-box">
+      <strong>Important Readiness Notice:</strong>
+      All content generated is a simulation and draft. Kavach does not dispatch regulatory notices or individual communications. All drafts must be reviewed, verified against technical forensic findings, and authorized by counsel or the Data Protection Officer before dispatch.
+    </div>
+  </div>
+</body>
+</html>"""
+    return Response(html_content, mimetype="text/html")
+

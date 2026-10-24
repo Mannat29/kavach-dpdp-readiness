@@ -1,11 +1,12 @@
 # Progress
 
 ## Done
-- Task 4b: Rights Desk UI (`templates/rights_desk.html`, `static/js/rights_desk.js`, `static/css/rights_desk.css`).
-  - Intake panel: WhatsApp paste textarea, load demo text, detect requests, empty state demo trigger.
-  - Request cards: intent & status badges, confidence, masked excerpt, live countdown, data locations table, ignored messages accordion.
-  - Erase workflow stepper: 1 Verify identity -> 2 Review plan (overrides, verify chips) -> 3 Approve & run (counts dialog) -> 4 Result (residuals, receipt, zip).
-  - Non-erase cards: suggested next step + close handler; timezone-aware UTC datetime cleanups in rights/ledger; Rights Desk in ENABLED_PAGES.
-  - 122 tests passing (`python -m pytest -q`).
+- Task 5a: Breach Blast-Radius Simulator backend & tests (`app/breach.py`, `app/rules/breach_scenarios.yaml`, `tests/test_breach.py`).
+  - Scenarios: owner_phone_stolen (299 recs, 15 people: 10 confirmed, 5 possible, range 10-15, high);
+    billing_laptop_ransomware (35 recs, 20 people: 20 confirmed, range 20-20, critical);
+    public_form_link_leaked (20 recs, 20 people: 20 confirmed, range 20-20, medium);
+    staff_laptop_lost (10 recs, 10 people: 10 confirmed, range 10-10, high).
+  - Explainable severity scoring, DPDP statutory clocks (72h deadline), PII-free draft generation, recipients, and HTML export.
+  - 138 tests passing (`python -m pytest -q`).
 
-## Next: Breach simulator.
+## Next: Task 5b (Breach simulator UI).

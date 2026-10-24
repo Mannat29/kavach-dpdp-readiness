@@ -73,3 +73,15 @@ CREATE TABLE IF NOT EXISTS risks (
     severity TEXT NOT NULL,
     status TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS breach_simulations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    scenario TEXT NOT NULL,
+    aware_at TIMESTAMP NOT NULL,
+    device_protected TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    counts_json TEXT NOT NULL,
+    drafts_json TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
