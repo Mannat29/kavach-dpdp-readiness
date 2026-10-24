@@ -80,6 +80,8 @@ def main():
     clinic_gstin = make_gstin(rng)
     decoy_aadhaar_order = make_invalid_aadhaar(rng)
 
+    shared_people_records = {i: [] for i in range(12)}
+
     # -----------------------------------------------------------------------
     # 1. patients.xlsx (TWO TABS: 'Active' and 'Archived')
     # -----------------------------------------------------------------------
@@ -134,6 +136,7 @@ def main():
 
         row_num = idx + 2
         ws1.append([name_val, phone_val, email_val, aadhaar_val, dob_val, test_val, remarks_val])
+        shared_people_records[idx].append({"source": "patients.xlsx", "record_key": f"patients.xlsx:Active/R{row_num}"})
 
         # Ground truth
         ground_truth.append({"source": "patients.xlsx", "location": f"Active/R{row_num}/C1", "category": "name"})
@@ -189,6 +192,7 @@ def main():
             gstin_val = clinic_gstin if i % 2 == 0 else ""
             row_num = i + 2
             writer.writerow([order_ref, cust_name, phone_val, amt, gstin_val])
+            shared_people_records[i].append({"source": "billing.csv", "record_key": f"billing.csv:R{row_num}"})
 
             ground_truth.append({"source": "billing.csv", "location": f"R{row_num}/C2", "category": "name"})
             ground_truth.append({"source": "billing.csv", "location": f"R{row_num}/C3", "category": "phone"})
@@ -208,6 +212,7 @@ def main():
             row_num = i + 2
             notes_val = f"Employee PAN card: {p['pan']}"
             writer.writerow([p["name"], p["pan"], format_messy_phone(p["phone"], rng), p["bank_account"], p["ifsc"], notes_val])
+            shared_people_records[i].append({"source": "staff.csv", "record_key": f"staff.csv:R{row_num}"})
 
             ground_truth.append({"source": "staff.csv", "location": f"R{row_num}/C1", "category": "name"})
             ground_truth.append({"source": "staff.csv", "location": f"R{row_num}/C2", "category": "pan"})
@@ -231,6 +236,7 @@ def main():
             remarks = f"Attendant name: {people[16+i%4]['name']}" if i % 3 == 0 else "Routine checkup"
 
             writer.writerow([ts_str, p["name"].lower(), format_messy_phone(p["phone"], rng), email_val, remarks])
+            shared_people_records[i].append({"source": "appointments_form.csv", "record_key": f"appointments_form.csv:R{row_num}"})
 
             ground_truth.append({"source": "appointments_form.csv", "location": f"R{row_num}/C2", "category": "name"})
             ground_truth.append({"source": "appointments_form.csv", "location": f"R{row_num}/C3", "category": "phone"})
@@ -259,11 +265,13 @@ def main():
     # Free text chat messages with names inside
     # "hi this is ramesh, my number is..."
     ln = add_chat("Admin", f"hi this is {people[0]['name'].lower()}, my number is {format_messy_phone(people[0]['phone'], rng)}")
+    shared_people_records[0].append({"source": "whatsapp_chat.txt", "record_key": f"line {ln}"})
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "name"})  # "Admin"
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "name"})  # inside text: ramesh
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "phone"})
 
     ln = add_chat("Clinic Staff", f"Hello, I am {people[1]['name'].upper()} and my email is {people[1]['email']}.")
+    shared_people_records[1].append({"source": "whatsapp_chat.txt", "record_key": f"line {ln}"})
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "name"})
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "name"})
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "email"})
@@ -271,6 +279,7 @@ def main():
     # Aadhaar with dots in chat
     aadhaar_dots = f"{people[2]['aadhaar'][:4]}.{people[2]['aadhaar'][4:8]}.{people[2]['aadhaar'][8:]}"
     ln = add_chat(people[2]["name"], f"Here is my Aadhaar: {aadhaar_dots}")
+    shared_people_records[2].append({"source": "whatsapp_chat.txt", "record_key": f"line {ln}"})
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "name"})
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "aadhaar"})
 
@@ -281,11 +290,13 @@ def main():
 
     # PAN in chat
     ln = add_chat(people[3]["name"], f"My PAN card number is {people[3]['pan']}")
+    shared_people_records[3].append({"source": "whatsapp_chat.txt", "record_key": f"line {ln}"})
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "name"})
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "pan"})
 
     # Health term in chat
     ln = add_chat(people[4]["name"], "Doctor said my blood sugar high and suspected diabetes.")
+    shared_people_records[4].append({"source": "whatsapp_chat.txt", "record_key": f"line {ln}"})
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "name"})
     ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "health_term"})
 
@@ -293,6 +304,7 @@ def main():
     for i in range(15):
         p = people[i % 5]
         ln = add_chat(p["name"], "Ok will collect tomorrow morning.")
+        shared_people_records[i % 5].append({"source": "whatsapp_chat.txt", "record_key": f"line {ln}"})
         ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {ln}", "category": "name"})
 
     with open(chat_path, "w", encoding="utf-8") as f:
@@ -305,7 +317,21 @@ def main():
     with open(gt_path, "w", encoding="utf-8") as f:
         json.dump(ground_truth, f, indent=2, ensure_ascii=False)
 
-    print(f"Created demo_hard data in {out_dir} with {len(ground_truth)} ground truth items.")
+    # -----------------------------------------------------------------------
+    # 7. people_truth.json
+    # -----------------------------------------------------------------------
+    people_truth = []
+    for i in range(12):
+        people_truth.append({
+            "person_id": i + 1,
+            "name": people[i]["name"],
+            "records": shared_people_records[i],
+        })
+    pt_path = os.path.join(out_dir, "people_truth.json")
+    with open(pt_path, "w", encoding="utf-8") as f:
+        json.dump(people_truth, f, indent=2, ensure_ascii=False)
+
+    print(f"Created demo_hard data in {out_dir} with {len(ground_truth)} ground truth items and {len(people_truth)} people.")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 """Entity resolution evaluation module: pairwise precision/recall against people_truth.json."""
+import argparse
 import json
 import os
 from collections import defaultdict
@@ -9,29 +10,29 @@ from app.db import init_db, get_db
 from app.inventory import scan_demo_data
 
 
-def evaluate_entity_resolution(demo_dir: str = None) -> Dict[str, Any]:
+def evaluate_entity_resolution(demo_dir: str = None, dataset: str = "demo") -> Dict[str, Any]:
     """Evaluate entity resolution against people_truth.json."""
     if demo_dir is None:
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        demo_dir = os.path.join(base_dir, "data", "demo")
+        folder = "demo_hard" if dataset == "hard" else "demo"
+        demo_dir = os.path.join(base_dir, "data", folder)
 
     pt_path = os.path.join(demo_dir, "people_truth.json")
     if not os.path.exists(pt_path):
-        print(f"ERROR: {pt_path} not found. Run scripts/seed.py first.")
+        print(f"ERROR: {pt_path} not found. Run scripts/seed.py or scripts/seed_hard.py first.")
         return {}
 
     with open(pt_path, encoding="utf-8") as f:
         people_truth = json.load(f)
 
-    # Ensure DB is populated with demo data
+    # Ensure DB is populated with requested data
     conn = get_db()
     init_db()
 
-    # Check if DB has people; if not, scan demo data
+    # Re-scan data for this dataset
+    scan_demo_data(conn, data_dir=demo_dir)
+
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) as count FROM person_records")
-    if cur.fetchone()["count"] == 0:
-        scan_demo_data(conn)
 
     # Build ground truth mapping: (source, record_key) -> true_person_id
     gt_record_to_person = {}
@@ -135,7 +136,10 @@ def evaluate_entity_resolution(demo_dir: str = None) -> Dict[str, Any]:
 
 
 def main():
-    evaluate_entity_resolution()
+    parser = argparse.ArgumentParser(description="Evaluate entity resolution against people_truth.json.")
+    parser.add_argument("--set", choices=["demo", "hard"], default="demo", help="Dataset to evaluate (demo or hard)")
+    args = parser.parse_args()
+    evaluate_entity_resolution(dataset=args.set)
 
 
 if __name__ == "__main__":

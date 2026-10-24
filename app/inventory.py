@@ -296,17 +296,26 @@ def get_inventory_summary(conn=None) -> Dict:
     }
 
 
-def scan_demo_data(conn=None):
-    """Scan all standard demo files from data/demo."""
+def scan_demo_data(conn=None, data_dir: Optional[str] = None):
+    """Scan all standard files from data_dir (defaults to data/demo)."""
     if conn is None:
         conn = get_db()
 
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    demo_dir = os.path.join(base_dir, "data", "demo")
+    if data_dir is None:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        data_dir = os.path.join(base_dir, "data", "demo")
+
+    # Clear previous DB data to ensure clean state
+    cur = conn.cursor()
+    cur.execute("DELETE FROM findings")
+    cur.execute("DELETE FROM person_records")
+    cur.execute("DELETE FROM people")
+    cur.execute("DELETE FROM sources")
+    conn.commit()
 
     files = ["patients.xlsx", "billing.csv", "staff.csv", "appointments_form.csv", "whatsapp_chat.txt"]
     for fname in files:
-        fpath = os.path.join(demo_dir, fname)
+        fpath = os.path.join(data_dir, fname)
         if os.path.exists(fpath):
             scan_and_ingest_file(fpath, conn)
 

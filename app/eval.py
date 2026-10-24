@@ -2,17 +2,41 @@
 import argparse
 import json
 import os
+import re
 import sys
 from typing import Dict, Any
 
 from app.detect import scan_file
 
 
-def evaluate(data_dir: str = None, dataset: str = "demo") -> Dict[str, Any]:
+def _mask_context(text: str, category: str = "") -> str:
+    """Produce a safe, masked context hint for debugging errors."""
+    text = text.strip()
+    if not text:
+        return ""
+    if len(text) <= 25:
+        if category == "name":
+            from app.detect import mask_name
+            return mask_name(text)
+        from app.detect import mask_value
+        return mask_value(text, show_last=min(4, len(text)))
+    # For longer text (e.g. chat or remarks), mask digit runs
+    masked = re.sub(r"\d+", lambda m: "X" * max(0, len(m.group()) - 2) + m.group()[-2:], text)
+    if len(masked) > 60:
+        return masked[:57] + "..."
+    return masked
+
+
+def evaluate(data_dir: str = None, dataset: str = "demo", show_errors: bool = False) -> Dict[str, Any]:
     """Run evaluation on a dataset directory and print/return results."""
     if data_dir is None:
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        folder = "demo_hard" if dataset == "hard" else "demo"
+        if dataset == "hard":
+            folder = "demo_hard"
+        elif dataset == "heldout":
+            folder = "demo_heldout"
+        else:
+            folder = "demo"
         data_dir = os.path.join(base_dir, "data", folder)
 
     gt_path = os.path.join(data_dir, "ground_truth.json")
@@ -31,20 +55,27 @@ def evaluate(data_dir: str = None, dataset: str = "demo") -> Dict[str, Any]:
         gt_categories.add(item["category"])
 
     # Scan all supported files in dataset directory
+    from app.ingest import read_source
     supported_exts = (".xlsx", ".csv", ".txt")
     files = sorted([f for f in os.listdir(data_dir) if f.endswith(supported_exts)])
     all_findings = []
+    location_texts = {}
     for fname in files:
         fpath = os.path.join(data_dir, fname)
+        for loc, text, meta in read_source(fpath):
+            location_texts[(fname, loc)] = text
         findings = scan_file(fpath)
         all_findings.extend(findings)
 
     # Build predicted set
     pred_set = set()
     pred_categories = set()
+    pred_samples = {}
     for f in all_findings:
-        pred_set.add((f["source"], f["location"], f["category"]))
+        key = (f["source"], f["location"], f["category"])
+        pred_set.add(key)
         pred_categories.add(f["category"])
+        pred_samples[key] = f.get("masked_sample", "")
 
     # Every category in ground truth must be evaluated and printed
     categories = sorted(gt_categories | pred_categories)
@@ -89,6 +120,28 @@ def evaluate(data_dir: str = None, dataset: str = "demo") -> Dict[str, Any]:
     print(f"{'OVERALL':<15} {total_tp:>4} {total_fp:>4} {total_fn:>4} {overall_p:>6.2f} {overall_r:>6.2f} {overall_f1:>6.2f}")
     print()
 
+    # Errors output if requested
+    if show_errors:
+        false_positives = sorted(pred_set - gt_set)
+        false_negatives = sorted(gt_set - pred_set)
+
+        print(f"=== ERRORS ({len(false_negatives)} False Negatives, {len(false_positives)} False Positives) ===")
+        if false_negatives:
+            print("\n-- False Negatives (Missed) --")
+            for src, loc, cat in false_negatives:
+                raw = location_texts.get((src, loc), "")
+                hint = _mask_context(raw, cat)
+                print(f"  FN: ({src}, {loc}, {cat}) | hint: '{hint}'")
+
+        if false_positives:
+            print("\n-- False Positives (Incorrectly Detected) --")
+            for src, loc, cat in false_positives:
+                sample = pred_samples.get((src, loc, cat), "")
+                raw = location_texts.get((src, loc), "")
+                hint = _mask_context(raw, cat)
+                print(f"  FP: ({src}, {loc}, {cat}) | sample: '{sample}', hint: '{hint}'")
+        print("=" * 60 + "\n")
+
     # Check acceptance criteria for demo set
     critical = {"aadhaar", "phone", "email", "pan", "gstin"}
     issues = []
@@ -117,9 +170,10 @@ def evaluate(data_dir: str = None, dataset: str = "demo") -> Dict[str, Any]:
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate detection against ground truth.")
-    parser.add_argument("--set", choices=["demo", "hard"], default="demo", help="Dataset to evaluate (demo or hard)")
+    parser.add_argument("--set", choices=["demo", "hard", "heldout"], default="demo", help="Dataset to evaluate (demo, hard, heldout)")
+    parser.add_argument("--errors", action="store_true", help="Print false negatives and false positives with masked context hints")
     args = parser.parse_args()
-    res = evaluate(dataset=args.set)
+    res = evaluate(dataset=args.set, show_errors=args.errors)
     if args.set == "demo" and res.get("issues"):
         sys.exit(1)
 

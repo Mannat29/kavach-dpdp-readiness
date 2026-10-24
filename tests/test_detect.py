@@ -183,3 +183,99 @@ class TestDetectors:
     def test_health_term(self):
         findings = detect_health_term("Patient has diabetes", "f.xlsx", "R2/C7", {})
         assert len(findings) == 1
+
+
+# ---------------------------------------------------------------------------
+# Format bug fix tests (Task 3a)
+# ---------------------------------------------------------------------------
+class TestFixedFormats:
+    def test_phone_formats(self):
+        """Test varied separators: dash, dot, brackets, prefixes +91, 0091, 91, 0."""
+        cases = [
+            ("+91-98765-43210", "9876543210"),
+            ("(98765) 43210", "9876543210"),
+            ("+91-(987)-654-3210", "9876543210"),
+            ("987.654.3210", "9876543210"),
+            ("+91.9876543210", "9876543210"),
+            ("(98765)-43210", "9876543210"),
+            ("0091-98765-43210", "9876543210"),
+            ("0-98765-43210", "9876543210"),
+            ("91-98765-43210", "9876543210"),
+        ]
+        for raw, expected in cases:
+            norm = normalize_phone(raw)
+            assert norm == expected, f"Failed normalize_phone on {raw}: got {norm}"
+            findings = detect_phone(f"call me at {raw} thanks", "test.csv", "R1/C1", {})
+            assert len(findings) == 1, f"Failed detect_phone on {raw}"
+            assert findings[0]["masked_sample"].endswith("3210")
+
+    def test_phone_no_match_in_longer_digit_runs(self):
+        """Must not match digits inside longer digit runs (order numbers, Aadhaar, account numbers)."""
+        bad_cases = [
+            "ORD-987654321012",
+            "98765432101234",
+            "123456789012",
+        ]
+        for raw in bad_cases:
+            assert normalize_phone(raw) is None, f"Should not match {raw}"
+            findings = detect_phone(raw, "test.csv", "R1/C1", {})
+            assert len(findings) == 0, f"detect_phone should not match {raw}"
+
+    def test_aadhaar_with_dots_dashes_spaces(self):
+        """Aadhaar with spaces, dashes, or dots; Verhoeff validated."""
+        from scripts.seed import make_aadhaar
+        import random
+        rng = random.Random(42)
+        valid = make_aadhaar(rng)
+        # 12 digits
+        assert len(valid) == 12
+
+        dotted = f"{valid[:4]}.{valid[4:8]}.{valid[8:]}"
+        dashed = f"{valid[:4]}-{valid[4:8]}-{valid[8:]}"
+        spaced = f"{valid[:4]} {valid[4:8]} {valid[8:]}"
+
+        for v in [dotted, dashed, spaced, valid]:
+            findings = detect_aadhaar(f"Aadhaar: {v}", "doc.csv", "R1/C1", {})
+            assert len(findings) == 1, f"Failed to detect Aadhaar format: {v}"
+            assert findings[0]["category"] == "aadhaar"
+
+    def test_health_term_whole_word_and_negation(self):
+        """health_term must use whole-word matching and skip trivial negations."""
+        # False positive fix: 'Archived record' contains 'hiv' but is not a whole-word match
+        f_archived = detect_health_term("Archived record", "patients.xlsx", "Archived/R2/C4", {})
+        assert len(f_archived) == 0
+
+        # Positive case
+        f_positive = detect_health_term("Patient diagnosed with diabetes", "patients.xlsx", "R2/C7", {})
+        assert len(f_positive) == 1
+        assert f_positive[0]["masked_sample"] == "XXXXetes"
+
+        # Negations should be skipped
+        negations = [
+            "Patient has no diabetes",
+            "Negative for HIV",
+            "Patient denies hypertension",
+            "without diabetes history",
+        ]
+        for neg in negations:
+            findings = detect_health_term(neg, "doc.csv", "R1/C1", {})
+            assert len(findings) == 0, f"Negation not skipped for '{neg}'"
+
+    def test_name_in_free_text(self):
+        """Free-text name patterns with confidence 0.6."""
+        cases = [
+            ("hi this is ramesh, my number is 9876543210", "ramesh"),
+            ("Hello, I am Priya Sharma and my email is test@mail.com", "Priya Sharma"),
+            ("my name is Suresh Gowda please note", "Suresh Gowda"),
+            ("mera naam Rajesh Shetty hai", "Rajesh Shetty"),
+            ("nanna hesaru Deepa Bhat", "Deepa Bhat"),
+            ("Referred by Dr. Harish Nayak", "Harish Nayak"),
+            ("Attendant name: Pooja Kulkarni", "Pooja Kulkarni"),
+        ]
+        for text, expected in cases:
+            findings = detect_name(text, "chat.txt", "line 1", {})
+            assert len(findings) >= 1, f"Failed to detect name in '{text}'"
+            names = [f["masked_sample"] for f in findings]
+            # Check confidence is 0.6
+            free_findings = [f for f in findings if f["confidence"] == 0.6]
+            assert len(free_findings) >= 1, f"Expected 0.6 confidence for free text: {text}"

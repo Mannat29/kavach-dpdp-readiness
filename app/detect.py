@@ -67,12 +67,17 @@ def hash_value(value: str) -> str:
 # Phone normalization
 # ---------------------------------------------------------------------------
 _PHONE_RE = re.compile(
-    r"""(?<!\d)             # not preceded by digit
-    (?:\+91[\s-]?|91[\s-]?|0)?  # optional country code / leading 0
-    ([6-9]\d{4})            # first 5 digits (starts 6-9)
-    [\s-]?                  # optional separator
-    (\d{5})                 # last 5 digits
-    (?!\d)                  # not followed by digit
+    r"""(?<!\d)                         # not preceded by digit
+    (?:(?:\+91|0091)[\s\-\.]?|91[\s\-\.]?|0[\s\-\.]?)?  # optional country code / trunk prefix
+    (?:
+        \([6-9]\d{4}\)[\s\-\.]?\d{5}           # (98765) 43210 or (98765)-43210
+      | \([6-9]\d{2}\)[\s\-\.]?\d{3}[\s\-\.]?\d{4} # (987)-654-3210 or +91-(987)-654-3210
+      | [6-9]\d{4}[\s\-\.]\d{5}               # 98765-43210 or 98765.43210 or 98765 43210
+      | [6-9]\d{2}[\s\-\.]\d{3}[\s\-\.]\d{4}   # 987-654-3210 or 987.654.3210
+      | [6-9]\d{3}[\s\-\.]\d{3}[\s\-\.]\d{3}   # 9876-543-210
+      | [6-9]\d{9}                            # 9876543210
+    )
+    (?!\d)                             # not followed by digit
     """,
     re.VERBOSE,
 )
@@ -82,7 +87,19 @@ def normalize_phone(raw: str) -> Optional[str]:
     """Extract and normalize an Indian mobile number to 10 digits, or None."""
     m = _PHONE_RE.search(raw)
     if m:
-        return m.group(1) + m.group(2)
+        d = re.sub(r"\D", "", m.group())
+        if d.startswith("0091") and len(d) == 14:
+            digits = d[4:]
+        elif d.startswith("91") and len(d) == 12:
+            digits = d[2:]
+        elif d.startswith("0") and len(d) == 11:
+            digits = d[1:]
+        elif len(d) == 10:
+            digits = d
+        else:
+            return None
+        if len(digits) == 10 and digits[0] in "6789":
+            return digits
     return None
 
 
@@ -91,9 +108,9 @@ def normalize_phone(raw: str) -> Optional[str]:
 # ---------------------------------------------------------------------------
 _EMAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}", re.IGNORECASE)
 
-# Aadhaar: 12 digits with optional spaces (groups of 4)
+# Aadhaar: 12 digits with optional spaces, dashes or dots; still Verhoeff-validated.
 _AADHAAR_RE = re.compile(
-    r"(?<!\d)([2-9]\d{3})[\s-]?(\d{4})[\s-]?(\d{4})(?!\d)"
+    r"(?<!\d)([2-9]\d{3})[\s\-\.]?(\d{4})[\s\-\.]?(\d{4})(?!\d)"
 )
 
 # PAN: 5 uppercase + 4 digits + 1 uppercase
@@ -115,18 +132,39 @@ _DOB_RE = re.compile(
     r"(?!\d)"
 )
 
-# Health terms
-HEALTH_TERMS = [
-    "diabetes", "hiv", "hiv positive", "hiv negative", "thyroid", "thyroid disorder",
-    "pregnancy", "pregnancy test", "hepatitis", "hepatitis b", "hypertension",
-    "cancer", "cancer screening", "blood sugar high", "blood sugar",
-]
+# Health terms (sorted longest first to match full phrases before substrings)
+HEALTH_TERMS = sorted([
+    "diabetes", "hiv positive", "hiv negative", "hiv", "thyroid disorder", "thyroid",
+    "pregnancy test", "pregnancy", "hepatitis b", "hepatitis", "hypertension",
+    "cancer screening", "cancer", "blood sugar high", "blood sugar",
+], key=len, reverse=True)
 
 # Column header hints for name detection
-_NAME_HEADERS = {"name", "patient_name", "patient name", "staff_name", "staff name",
-                 "full_name", "full name", "sender", "customer_name", "customer name"}
+_NAME_HEADERS = {
+    "name", "patient_name", "patient name", "staff_name", "staff name",
+    "full_name", "full name", "sender", "customer_name", "customer name",
+    "applicant", "applicant_name", "applicant name", "candidate", "candidate_name",
+}
 _BANK_HEADERS = {"bank_account", "bank account", "account_no", "account no",
                  "account_number", "account number", "bank_acc", "acc_no"}
+
+# Free-text name patterns
+_NAME_FREE_PATTERNS = [
+    r"(?:\bthis is|\bi am|\bi'm|\bmy name is|\bname is|\breferred by (?:dr\.?\s*)?|\battendant\s+name\s*[:\-]?|\bpatient\s+name\s*[:\-]?)",
+    r"(?:\bmera naam|\bhumara naam|\bhamara naam)",
+    r"(?:\bnanna hesaru)",
+]
+_NAME_FREE_RE = re.compile(
+    r"(?:" + "|".join(_NAME_FREE_PATTERNS) + r")\s+([a-zA-Z\s\.]+)",
+    re.IGNORECASE,
+)
+_NAME_STOPWORDS = {
+    "and", "my", "who", "with", "for", "hai", "tha", "a", "an", "the", "is",
+    "has", "had", "have", "was", "were",
+    "number", "phone", "email", "contact", "from", "here", "please",
+    "call", "send", "submitted", "confirmed", "today", "tomorrow",
+    "dr", "mr", "mrs", "ms",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -134,16 +172,25 @@ _BANK_HEADERS = {"bank_account", "bank account", "account_no", "account no",
 # ---------------------------------------------------------------------------
 def detect_phone(text: str, source: str, location: str, meta: dict) -> List[Dict]:
     """Detect Indian mobile phone numbers."""
+    header = meta.get("header", "").lower()
+    if header in _BANK_HEADERS or header in {"aadhaar", "national_id", "order_ref", "order_id"}:
+        return []
     findings = []
     for m in _PHONE_RE.finditer(text):
-        digits = m.group(1) + m.group(2)
-        # Check it's not part of a longer number sequence
-        start = m.start()
-        end = m.end()
-        full = text
-        # Get the full match including prefix
-        prefix_match = re.match(r"(?:\+91[\s-]?|91[\s-]?|0)?", full[max(0, start-5):start+1])
-        findings.append(_make_finding(source, location, "phone", digits, 0.95))
+        raw_val = m.group()
+        d = re.sub(r"\D", "", raw_val)
+        if d.startswith("0091") and len(d) == 14:
+            digits = d[4:]
+        elif d.startswith("91") and len(d) == 12:
+            digits = d[2:]
+        elif d.startswith("0") and len(d) == 11:
+            digits = d[1:]
+        elif len(d) == 10:
+            digits = d
+        else:
+            continue
+        if len(digits) == 10 and digits[0] in "6789":
+            findings.append(_make_finding(source, location, "phone", digits, 0.95))
     return findings
 
 
@@ -169,7 +216,7 @@ def detect_aadhaar(text: str, source: str, location: str, meta: dict) -> List[Di
         if prefix.endswith("+91") or prefix.endswith("+") or prefix.endswith("91"):
             continue
         # Skip if the whole text looks like a phone with country code
-        stripped = re.sub(r"[\s\-+]", "", text)
+        stripped = re.sub(r"[\s\-+.]", "", text)
         if re.match(r"^(91|0)?[6-9]\d{9}$", stripped):
             continue
         if verhoeff_validate(digits):
@@ -266,30 +313,69 @@ def detect_bank_account(text: str, source: str, location: str, meta: dict) -> Li
     return []
 
 
+def _extract_free_text_names(text: str) -> List[str]:
+    names = []
+    for m in _NAME_FREE_RE.finditer(text):
+        raw_tail = m.group(1).strip()
+        tail_clean = re.split(r"[,;!?\n\r]", raw_tail)[0].strip()
+        words = tail_clean.split()
+        cand_words = []
+        for w in words:
+            w_clean = w.strip(".").lower()
+            if w_clean in _NAME_STOPWORDS or not w_clean.isalpha():
+                break
+            cand_words.append(w.strip("."))
+            if len(cand_words) == 3:
+                break
+        if cand_words:
+            if len(cand_words) == 1 and (len(cand_words[0]) < 3 or cand_words[0].lower() in {"dr", "mr", "mrs", "ms"}):
+                continue
+            name_val = " ".join(cand_words)
+            name_val = re.sub(r"^(?:dr|mr|mrs|ms)\.?\s+", "", name_val, flags=re.IGNORECASE).strip()
+            if len(name_val) >= 3:
+                names.append(name_val)
+    return names
+
+
 def detect_name(text: str, source: str, location: str, meta: dict) -> List[Dict]:
-    """Detect names from column headers or WhatsApp sender field."""
+    """Detect names from column headers, WhatsApp sender field, or free-text patterns."""
     header = meta.get("header", "").lower()
     sender = meta.get("sender", "")
+    findings = []
+    seen_names = set()
 
     # For tabular data, use header hints
     if header in _NAME_HEADERS:
-        # Simple heuristic: non-empty text that's not purely numeric
         if text and not text.replace(" ", "").isdigit():
-            return [_make_finding(source, location, "name", text, 0.70)]
+            findings.append(_make_finding(source, location, "name", text, 0.70))
+            seen_names.add(text.strip().lower())
 
     # For WhatsApp, the sender is a name
     if sender:
-        return [_make_finding(source, location, "name", sender, 0.65)]
+        findings.append(_make_finding(source, location, "name", sender, 0.65))
+        seen_names.add(sender.strip().lower())
 
-    return []
+    # Free text name patterns (heuristic: confidence 0.6)
+    for name_candidate in _extract_free_text_names(text):
+        if name_candidate.lower() not in seen_names:
+            seen_names.add(name_candidate.lower())
+            findings.append(_make_finding(source, location, "name", name_candidate, 0.60))
+
+    return findings
 
 
 def detect_health_term(text: str, source: str, location: str, meta: dict) -> List[Dict]:
-    """Detect health-related terms."""
+    """Detect health-related terms using whole-word matching, skipping trivial negations."""
     findings = []
     text_lower = text.lower()
     for term in HEALTH_TERMS:
-        if term in text_lower:
+        pattern = r"\b" + re.escape(term) + r"\b"
+        m = re.search(pattern, text_lower)
+        if m:
+            start_idx = m.start()
+            prefix = text_lower[:start_idx].strip()
+            if re.search(r"\b(?:no|not|without|denies|negative for)\s*$", prefix):
+                continue
             findings.append(_make_finding(source, location, "health_term", term, 0.80))
             break  # one finding per cell/line
     return findings
