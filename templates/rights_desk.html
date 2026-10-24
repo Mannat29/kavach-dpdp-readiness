@@ -1,3 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Rights Desk – Kavach{% endblock %}
-{% block content %}<h1>Rights Desk</h1>{% endblock %}
+
+{% block content %}
+<div class="page-container stub-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Rights Desk</h1>
+            <p class="page-subtitle">Informal request catcher, SAR fulfillment, and consent &amp; erasure workflows.</p>
+        </div>
+    </div>
+
+    <section class="card stub-card" aria-label="Feature coming soon">
+        <div class="stub-icon" aria-hidden="true">&#x1F4DD;</div>
+        <div class="badge badge-info mb-2">Coming Soon</div>
+        <h2 class="stub-title">Rights Desk is Coming Soon</h2>
+        <p class="stub-text">The Rights Desk will provide an automated catcher for informal data principal requests across WhatsApp and email, alongside an erasure engine with post-deletion residual scanning.</p>
+        <div class="stub-actions">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

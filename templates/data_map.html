@@ -1,3 +1,95 @@
 {% extends "base.html" %}
 {% block title %}Data Map – Kavach{% endblock %}
-{% block content %}<h1>Data Map</h1>{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-container data-map-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Interactive Data Map</h1>
+            <p class="page-subtitle">Visual topology of data stores, personal data categories, and resolved principal identity clusters.</p>
+        </div>
+        <div class="page-actions">
+            <!-- Mode Switcher -->
+            <div class="mode-switch-group" role="group" aria-label="Graph visualization mode">
+                <button type="button" id="mode-btn-sources" class="btn btn-mode active" aria-pressed="true">
+                    &#x1F5C3; Sources &rarr; Categories
+                </button>
+                <button type="button" id="mode-btn-person" class="btn btn-mode" aria-pressed="false">
+                    &#x1F464; Person View (Entity Resolution)
+                </button>
+            </div>
+            <button id="btn-scan-demo-map" class="btn btn-primary" type="button">
+                <span class="btn-icon" aria-hidden="true">&#x25B6;</span>
+                <span class="btn-text">Scan demo data</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <section id="map-empty-state" class="card empty-state-card" style="display: none;" aria-label="Empty State">
+        <div class="empty-state-icon" aria-hidden="true">&#x1F6E1;</div>
+        <h2 class="empty-state-title">No Data Map Available</h2>
+        <p class="empty-state-text">Data maps require ingested sources. Scan the demo dataset to visualize connections between business files and personal data categories.</p>
+        <button id="btn-empty-scan-demo" class="btn btn-primary" type="button">Scan demo data</button>
+    </section>
+
+    <div id="map-content">
+        <!-- MODE A: Sources -> Categories -->
+        <section id="view-mode-sources" class="card map-card" aria-label="Sources to Categories Graph">
+            <div class="map-toolbar">
+                <div class="legend-bar">
+                    <span class="legend-item"><span class="legend-color legend-source"></span> Data Source (Store)</span>
+                    <span class="legend-item"><span class="legend-color legend-category"></span> Standard Category</span>
+                    <span class="legend-item"><span class="legend-color legend-sensitive"></span> Sensitive Category (Highlighted)</span>
+                    <span class="legend-item legend-hint text-muted">Node size indicates relative findings volume.</span>
+                </div>
+                <div class="graph-controls">
+                    <button id="btn-reset-sources-zoom" class="btn btn-secondary btn-sm" title="Fit graph view">Reset View</button>
+                </div>
+            </div>
+            <div id="cy-sources-categories" class="cy-container" role="img" aria-label="Graph showing sources connected to data categories"></div>
+        </section>
+
+        <!-- MODE B: Person View (Entity Resolution) -->
+        <section id="view-mode-person" class="card map-card" style="display: none;" aria-label="Person View Graph">
+            <div class="map-toolbar person-toolbar">
+                <div class="person-selector-group">
+                    <label for="person-select" class="person-select-label"><strong>Select Data Principal:</strong></label>
+                    <div class="person-select-wrap">
+                        <input type="text" id="person-search-input" class="filter-input input-sm" placeholder="Search by name / ID..." aria-label="Search person">
+                        <select id="person-select" class="filter-select select-sm" aria-label="Select data principal to view records">
+                            <option value="">Loading people...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="legend-bar">
+                    <span class="legend-item"><span class="legend-line legend-solid"></span> Strong Match (Aadhaar/Phone)</span>
+                    <span class="legend-item"><span class="legend-line legend-dashed"></span> Probable Match (Name-only)</span>
+                </div>
+                <div class="graph-controls">
+                    <button id="btn-reset-person-zoom" class="btn btn-secondary btn-sm" title="Fit graph view">Reset View</button>
+                </div>
+            </div>
+
+            <div class="person-graph-layout">
+                <div id="cy-person" class="cy-container person-cy" role="img" aria-label="Graph showing person linked to source records"></div>
+
+                <!-- Side Panel for details -->
+                <aside id="node-side-panel" class="node-side-panel" aria-label="Record inspection panel" aria-live="polite">
+                    <div class="panel-header">
+                        <h3 id="panel-title" class="panel-title">Node Details</h3>
+                        <span id="panel-subtitle" class="panel-subtitle text-muted">Click a record node to view findings</span>
+                    </div>
+                    <div id="panel-body" class="panel-body">
+                        <div class="panel-empty-hint">Click on any record or person node in the graph to inspect masked samples and linkage details.</div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

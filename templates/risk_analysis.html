@@ -1,3 +1,71 @@
 {% extends "base.html" %}
 {% block title %}Risk Analysis – Kavach{% endblock %}
-{% block content %}<h1>Risk Analysis</h1>{% endblock %}
+
+{% block content %}
+<div class="page-container risk-analysis-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Statutory Risk Analysis</h1>
+            <p class="page-subtitle">Evaluation of 12 core India DPDP Act 2023 &amp; Rules 2025 obligations against your ingested data and business questionnaires.</p>
+        </div>
+        <div class="page-actions">
+            <button id="btn-scan-demo-risk" class="btn btn-primary" type="button">
+                <span class="btn-icon" aria-hidden="true">&#x25B6;</span>
+                <span class="btn-text">Scan demo data</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <section id="risk-empty-state" class="card empty-state-card" style="display: none;" aria-label="Empty State">
+        <div class="empty-state-icon" aria-hidden="true">&#x1F6E1;</div>
+        <h2 class="empty-state-title">No Risks Evaluated Yet</h2>
+        <p class="empty-state-text">Risk rules are evaluated dynamically against ingested files and questionnaire responses. Scan demo data to view real-time compliance results.</p>
+        <button id="btn-empty-scan-demo" class="btn btn-primary" type="button">Scan demo data</button>
+    </section>
+
+    <div id="risk-content">
+        <!-- Summary Strip -->
+        <section class="stats-strip" aria-label="Risk Evaluation Summary">
+            <div class="stat-item">
+                <span class="stat-number" id="risk-score-display">--</span>
+                <span class="stat-title">Current Readiness Score</span>
+            </div>
+            <div class="stat-item stat-item-alert">
+                <span class="stat-number" id="risk-triggered-count">0</span>
+                <span class="stat-title">Triggered Compliance Risks</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="risk-passed-count">0</span>
+                <span class="stat-title">Passed / Lawful Bases</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="risk-deductions-total">0</span>
+                <span class="stat-title">Total Points Deducted</span>
+            </div>
+        </section>
+
+        <!-- Section 1: Triggered Risks -->
+        <section class="risk-section" aria-label="Triggered Compliance Risks">
+            <div class="section-header-row">
+                <h2 class="section-title text-danger">&#x26A0; Triggered Risks (Action Required)</h2>
+                <span class="text-muted" id="triggered-summary-sub">Require technical safeguards or operational updates</span>
+            </div>
+            <div id="triggered-risks-container" class="risk-cards-grid">
+                <div class="card p-4 text-center text-muted">Evaluating rules...</div>
+            </div>
+        </section>
+
+        <!-- Section 2: Looks Fine (Passed / Exceptions) -->
+        <section class="risk-section mt-5" aria-label="Passed and Lawful Bases">
+            <div class="section-header-row">
+                <h2 class="section-title text-success">&#x2714; Looks Fine (Compliant &amp; Lawful Bases)</h2>
+                <span class="text-muted">Statutory duties satisfied or recognized under legal exceptions</span>
+            </div>
+            <div id="passed-risks-container" class="risk-cards-grid">
+                <div class="card p-4 text-center text-muted">Evaluating rules...</div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

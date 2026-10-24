@@ -1,3 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Breach Simulator – Kavach{% endblock %}
-{% block content %}<h1>Breach Simulator</h1>{% endblock %}
+
+{% block content %}
+<div class="page-container stub-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Breach Simulator</h1>
+            <p class="page-subtitle">Incident blast-radius simulator and DPDP Section 8(6) two-stage notification clocks.</p>
+        </div>
+    </div>
+
+    <section class="card stub-card" aria-label="Feature coming soon">
+        <div class="stub-icon" aria-hidden="true">&#x26A1;</div>
+        <div class="badge badge-info mb-2">Coming Soon</div>
+        <h2 class="stub-title">Breach Simulator is Coming Soon</h2>
+        <p class="stub-text">Simulate potential compromise scenarios across connected data sources, compute principal impact counts, track two-stage regulatory notification deadlines, and generate draft intimations for the Data Protection Board.</p>
+        <div class="stub-actions">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

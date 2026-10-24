@@ -3,25 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Kavach{% endblock %}</title>
+    <title>{% block title %}Kavach – DPDP Readiness{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head_extra %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <div class="nav-brand">Kavach</div>
-        <ul>
-            <li><a href="{{ url_for('main.scanner') }}">Scanner</a></li>
-            <li><a href="{{ url_for('main.data_map') }}">Data Map</a></li>
-            <li><a href="{{ url_for('main.rights_desk') }}">Rights Desk</a></li>
-            <li><a href="{{ url_for('main.breach_simulator') }}">Breach Simulator</a></li>
-            <li><a href="{{ url_for('main.risk_analysis') }}">Risk Analysis</a></li>
-            <li><a href="{{ url_for('main.reports') }}">Reports</a></li>
-            <li><a href="{{ url_for('main.evidence') }}">Evidence</a></li>
-        </ul>
-    </nav>
-    <main>
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="brand-group">
+                <a href="{{ url_for('main.dashboard') }}" class="brand-link" aria-label="Kavach Home">
+                    <span class="brand-shield" aria-hidden="true">&#x1F6E1;</span>
+                    <span class="brand-name">Kavach</span>
+                </a>
+                <span class="brand-badge">DPDP 2023 / 2025</span>
+            </div>
+            <nav class="main-nav" aria-label="Primary Navigation">
+                <ul class="nav-list">
+                    <li><a href="{{ url_for('main.dashboard') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" {% if active_page == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a></li>
+                    <li><a href="{{ url_for('main.scanner') }}" class="nav-link {% if active_page == 'scanner' %}active{% endif %}" {% if active_page == 'scanner' %}aria-current="page"{% endif %}>Scanner</a></li>
+                    <li><a href="{{ url_for('main.data_map') }}" class="nav-link {% if active_page == 'data_map' %}active{% endif %}" {% if active_page == 'data_map' %}aria-current="page"{% endif %}>Data Map</a></li>
+                    <li><a href="{{ url_for('main.rights_desk') }}" class="nav-link {% if active_page == 'rights_desk' %}active{% endif %}" {% if active_page == 'rights_desk' %}aria-current="page"{% endif %}>Rights Desk</a></li>
+                    <li><a href="{{ url_for('main.breach_simulator') }}" class="nav-link {% if active_page == 'breach_simulator' %}active{% endif %}" {% if active_page == 'breach_simulator' %}aria-current="page"{% endif %}>Breach Simulator</a></li>
+                    <li><a href="{{ url_for('main.risk_analysis') }}" class="nav-link {% if active_page == 'risk_analysis' %}active{% endif %}" {% if active_page == 'risk_analysis' %}aria-current="page"{% endif %}>Risk Analysis</a></li>
+                    <li><a href="{{ url_for('main.reports') }}" class="nav-link {% if active_page == 'reports' %}active{% endif %}" {% if active_page == 'reports' %}aria-current="page"{% endif %}>Reports</a></li>
+                    <li><a href="{{ url_for('main.evidence') }}" class="nav-link {% if active_page == 'evidence' %}active{% endif %}" {% if active_page == 'evidence' %}aria-current="page"{% endif %}>Evidence</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="legal-banner" role="note" aria-label="Legal Notice">
+        <span>Readiness aid, not legal advice. Citations pending verification.</span>
+    </div>
+
+    <div id="global-alert" class="global-alert" role="alert" aria-live="assertive" style="display: none;">
+        <span id="alert-text"></span>
+        <button id="alert-dismiss" class="btn-dismiss" aria-label="Dismiss notification">&times;</button>
+    </div>
+
+    <main id="main-content" class="main-content">
         {% block content %}{% endblock %}
     </main>
+
+    <footer class="app-footer">
+        <p>Kavach DPDP Readiness &copy; 2026. Built for Indian small businesses. Unmasked samples are never persisted.</p>
+    </footer>
+
+    {% block scripts_extra %}{% endblock %}
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

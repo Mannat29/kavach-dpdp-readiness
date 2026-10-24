@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – Kavach{% endblock %}
+
+{% block content %}
+<div class="page-container dashboard-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">DPDP Readiness Dashboard</h1>
+            <p class="page-subtitle">Continuous privacy compliance assessment, entity resolution &amp; risk analysis for small business data.</p>
+        </div>
+        <div class="page-actions">
+            <button id="btn-scan-demo" class="btn btn-primary" type="button">
+                <span class="btn-icon" aria-hidden="true">&#x25B6;</span>
+                <span class="btn-text">Scan demo data</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Upload Dropzone -->
+    <section class="card upload-card" aria-label="File Ingestion">
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload files: Drag and drop or activate to browse files">
+            <input type="file" id="file-input" multiple accept=".csv,.xlsx,.txt" class="visually-hidden" aria-label="Upload data files">
+            <div class="dropzone-content">
+                <div class="dropzone-icon" aria-hidden="true">&#x1F4C2;</div>
+                <div class="dropzone-text">
+                    <p class="dropzone-main"><strong>Drop business files here</strong> or <span class="dropzone-browse">browse files</span></p>
+                    <p class="dropzone-sub">Supports Excel (.xlsx), CSV (.csv), and WhatsApp chat exports (.txt). Zero raw PII persisted.</p>
+                </div>
+            </div>
+            <div id="upload-progress" class="upload-progress" style="display:none;" aria-live="polite">
+                <span class="spinner" aria-hidden="true"></span>
+                <span id="upload-progress-text">Uploading and scanning files...</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Empty State -->
+    <section id="empty-state" class="card empty-state-card" style="display: none;" aria-label="Empty State">
+        <div class="empty-state-icon" aria-hidden="true">&#x1F6E1;</div>
+        <h2 class="empty-state-title">No Data Scanned Yet</h2>
+        <p class="empty-state-text">Get started by clicking <strong>"Scan demo data"</strong> to load a realistic medical clinic sample, or drop your spreadsheets and WhatsApp exports above.</p>
+        <button id="btn-empty-scan-demo" class="btn btn-primary" type="button">Scan demo data</button>
+    </section>
+
+    <!-- Main Dashboard Data Content -->
+    <div id="dashboard-content">
+        <!-- KPI Cards -->
+        <section class="kpi-grid" aria-label="Key Performance Indicators">
+            <div class="kpi-card">
+                <div class="kpi-label">Sources Scanned</div>
+                <div class="kpi-value" id="kpi-sources">0</div>
+                <div class="kpi-hint">Files &amp; data stores</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total Records</div>
+                <div class="kpi-value" id="kpi-records">0</div>
+                <div class="kpi-hint">Extracted rows &amp; entries</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Unique Principals</div>
+                <div class="kpi-value" id="kpi-people">0</div>
+                <div class="kpi-hint">Resolved individuals</div>
+            </div>
+            <div class="kpi-card kpi-card-alert">
+                <div class="kpi-label">Sensitive Sources</div>
+                <div class="kpi-value" id="kpi-sensitive-sources">0</div>
+                <div class="kpi-hint">Contains Aadhaar, health, minors, PAN</div>
+            </div>
+        </section>
+
+        <!-- Readiness Score & Questionnaire Grid -->
+        <div class="dashboard-split-grid">
+            <!-- Big Readiness Score Card -->
+            <section class="card score-card" aria-label="Readiness Score">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Overall Readiness Score</h2>
+                        <p class="card-subtitle">Calculated from 12 statutory DPDP rules and business practices</p>
+                    </div>
+                </div>
+                <div class="score-display-box" aria-live="polite" id="score-live-region">
+                    <div class="score-circle">
+                        <span id="readiness-score" class="score-num">--</span>
+                        <span class="score-max">/100</span>
+                    </div>
+                    <div class="score-meta">
+                        <div id="score-status-badge" class="badge badge-neutral">Evaluating...</div>
+                        <p id="score-summary" class="score-summary-text">Evaluating compliance status...</p>
+                    </div>
+                </div>
+
+                <div class="deductions-container">
+                    <h3 class="section-subheading">Score Deductions Breakdown</h3>
+                    <ul id="deductions-list" class="deductions-list">
+                        <li class="deduction-item empty-deduction">No deductions recorded.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 6-Question Self Assessment -->
+            <section class="card questionnaire-card" aria-label="Self-Assessment Questionnaire">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Self-Assessment Questionnaire</h2>
+                        <p class="card-subtitle">6 operational toggles. Updates readiness score and risks live.</p>
+                    </div>
+                </div>
+                <form id="questionnaire-form" class="questionnaire-list" onsubmit="return false;">
+                    <div class="question-row">
+                        <div class="question-info">
+                            <label for="q-cctv" class="question-title">CCTV surveillance on premises</label>
+                            <p class="question-desc">Do you operate CCTV cameras in patient, customer, or office premises? Requires visible collection notice (s.5).</p>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="q-cctv" name="cctv" class="toggle-input" data-key="cctv">
+                            <label for="q-cctv" class="toggle-slider" aria-label="Toggle CCTV surveillance"></label>
+                            <span class="toggle-state-text" id="q-cctv-label">No</span>
+                        </div>
+                    </div>
+
+                    <div class="question-row">
+                        <div class="question-info">
+                            <label for="q-personal-phones" class="question-title">Staff personal mobile devices</label>
+                            <p class="question-desc">Do staff, contractors, or doctors store patient/customer records or chat exports on personal phones? (s.8(5)).</p>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="q-personal-phones" name="personal_phones" class="toggle-input" data-key="personal_phones">
+                            <label for="q-personal-phones" class="toggle-slider" aria-label="Toggle Staff personal mobile devices"></label>
+                            <span class="toggle-state-text" id="q-personal-phones-label">No</span>
+                        </div>
+                    </div>
+
+                    <div class="question-row">
+                        <div class="question-info">
+                            <label for="q-vendors" class="question-title">Vendors without written DPAs</label>
+                            <p class="question-desc">Do you share personal data with external labs, software providers, or accountants without written DPAs? (s.8(2)).</p>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="q-vendors" name="vendors" class="toggle-input" data-key="vendors">
+                            <label for="q-vendors" class="toggle-slider" aria-label="Toggle Vendors without written DPAs"></label>
+                            <span class="toggle-state-text" id="q-vendors-label">No</span>
+                        </div>
+                    </div>
+
+                    <div class="question-row">
+                        <div class="question-info">
+                            <label for="q-breach-contact" class="question-title">Designated breach point of contact</label>
+                            <p class="question-desc">Have you established a breach notification procedure and published a point of contact for intimation? (s.8(6)).</p>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="q-breach-contact" name="breach_contact" class="toggle-input" data-key="breach_contact">
+                            <label for="q-breach-contact" class="toggle-slider" aria-label="Toggle Designated breach point of contact"></label>
+                            <span class="toggle-state-text" id="q-breach-contact-label">No</span>
+                        </div>
+                    </div>
+
+                    <div class="question-row">
+                        <div class="question-info">
+                            <label for="q-retention-policy" class="question-title">Documented data retention policy</label>
+                            <p class="question-desc">Do you have a written schedule to periodically delete personal data once purpose has expired? (s.8(7)).</p>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="q-retention-policy" name="retention_policy" class="toggle-input" data-key="retention_policy">
+                            <label for="q-retention-policy" class="toggle-slider" aria-label="Toggle Documented data retention policy"></label>
+                            <span class="toggle-state-text" id="q-retention-policy-label">No</span>
+                        </div>
+                    </div>
+
+                    <div class="question-row">
+                        <div class="question-info">
+                            <label for="q-children-served" class="question-title">Direct processing of minors' data</label>
+                            <p class="question-desc">Do you knowingly serve or retain data of children under 18 requiring verifiable parental consent? (s.9).</p>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="q-children-served" name="children_served" class="toggle-input" data-key="children_served">
+                            <label for="q-children-served" class="toggle-slider" aria-label="Toggle Direct processing of minors data"></label>
+                            <span class="toggle-state-text" id="q-children-served-label">No</span>
+                        </div>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <!-- Top 5 Priority Risks -->
+        <section class="card top-risks-card" aria-label="Top Priority Risks">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Top Priority Risks</h2>
+                    <p class="card-subtitle">Highest impact non-compliance findings detected across your inventory</p>
+                </div>
+                <a href="{{ url_for('main.risk_analysis') }}" class="btn btn-secondary btn-sm">View all in Risk Analysis &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table" id="top-risks-table">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 120px;">Severity</th>
+                            <th scope="col">Rule &amp; Issue</th>
+                            <th scope="col" style="width: 180px;">Statutory Citation</th>
+                            <th scope="col" style="width: 90px;">Deduction</th>
+                            <th scope="col">Remediation Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-risks-tbody">
+                        <tr>
+                            <td colspan="5" class="table-empty">No risks detected.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

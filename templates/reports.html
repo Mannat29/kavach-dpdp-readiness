@@ -1,3 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Reports – Kavach{% endblock %}
-{% block content %}<h1>Reports</h1>{% endblock %}
+
+{% block content %}
+<div class="page-container stub-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Compliance Reports</h1>
+            <p class="page-subtitle">Executive readiness summaries, Data Protection Impact Assessments (DPIA), and vendor audits.</p>
+        </div>
+    </div>
+
+    <section class="card stub-card" aria-label="Feature coming soon">
+        <div class="stub-icon" aria-hidden="true">&#x1F4CA;</div>
+        <div class="badge badge-info mb-2">Coming Soon</div>
+        <h2 class="stub-title">Reports Module is Coming Soon</h2>
+        <p class="stub-text">Generate exportable PDF and CSV compliance readiness reports for stakeholders, insurance underwriters, and external compliance reviewers.</p>
+        <div class="stub-actions">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

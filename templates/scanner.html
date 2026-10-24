@@ -1,3 +1,143 @@
 {% extends "base.html" %}
 {% block title %}Scanner – Kavach{% endblock %}
-{% block content %}<h1>Scanner</h1>{% endblock %}
+
+{% block content %}
+<div class="page-container scanner-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Data Inventory &amp; Scanner</h1>
+            <p class="page-subtitle">Per-source inventory and granular inspection of personal data elements detected across ingested stores.</p>
+        </div>
+        <div class="page-actions">
+            <button id="btn-scan-demo-scanner" class="btn btn-primary" type="button">
+                <span class="btn-icon" aria-hidden="true">&#x25B6;</span>
+                <span class="btn-text">Scan demo data</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <section id="scanner-empty-state" class="card empty-state-card" style="display: none;" aria-label="Empty State">
+        <div class="empty-state-icon" aria-hidden="true">&#x1F6E1;</div>
+        <h2 class="empty-state-title">No Data Sources Scanned</h2>
+        <p class="empty-state-text">No data sources have been ingested yet. Scan the demo clinic dataset to inspect detected personal data categories and masked samples.</p>
+        <button id="btn-empty-scan-demo" class="btn btn-primary" type="button">Scan demo data</button>
+    </section>
+
+    <div id="scanner-content">
+        <!-- Summary Stats Strip -->
+        <section class="stats-strip" aria-label="Inventory Summary Metrics">
+            <div class="stat-item">
+                <span class="stat-number" id="scanner-stat-sources">0</span>
+                <span class="stat-title">Sources Ingested</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="scanner-stat-records">0</span>
+                <span class="stat-title">Total Records</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="scanner-stat-findings">0</span>
+                <span class="stat-title">Detected Findings</span>
+            </div>
+            <div class="stat-item stat-item-alert">
+                <span class="stat-number" id="scanner-stat-sensitive">0</span>
+                <span class="stat-title">Sensitive Sources</span>
+            </div>
+        </section>
+
+        <!-- 1) Per-Source Inventory Table -->
+        <section class="card mb-4" aria-label="Per-Source Inventory">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Per-Source Data Inventory</h2>
+                    <p class="card-subtitle">File types, records, detected data categories with counts, and statutory sensitivity flags.</p>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table" id="sources-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Source Name</th>
+                            <th scope="col" style="width: 100px;">Type</th>
+                            <th scope="col" style="width: 100px;">Records</th>
+                            <th scope="col">Detected Categories &amp; Counts</th>
+                            <th scope="col" style="width: 140px;">Sensitivity</th>
+                            <th scope="col" style="width: 160px;">Scanned Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sources-tbody">
+                        <tr>
+                            <td colspan="6" class="table-empty">Loading sources...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 2) Filterable Findings Table -->
+        <section class="card" aria-label="Granular Findings">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Granular Data Findings</h2>
+                    <p class="card-subtitle">Inspect individual detected personal data tokens. Values are salted and masked; raw PII is never shown.</p>
+                </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label for="filter-source" class="filter-label">Filter by Source:</label>
+                    <select id="filter-source" class="filter-select">
+                        <option value="">All Sources</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-category" class="filter-label">Filter by Category:</label>
+                    <select id="filter-category" class="filter-select">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+
+                <div class="filter-group filter-group-grow">
+                    <label for="filter-search" class="filter-label">Search Masked Sample:</label>
+                    <input type="text" id="filter-search" class="filter-input" placeholder="e.g. 98*****, Aadhaar, Ramesh...">
+                </div>
+
+                <div class="filter-group filter-group-end">
+                    <span id="findings-count-badge" class="badge badge-neutral" aria-live="polite">Showing 0 findings</span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table" id="findings-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Source</th>
+                            <th scope="col">Location / Key</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Masked Sample</th>
+                            <th scope="col" style="width: 110px;">Confidence</th>
+                            <th scope="col">Details / Context</th>
+                        </tr>
+                    </thead>
+                    <tbody id="findings-tbody">
+                        <tr>
+                            <td colspan="6" class="table-empty">Loading findings...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination / Counter Footer -->
+            <div class="table-footer" id="findings-pagination">
+                <span id="findings-page-info" class="text-muted"></span>
+                <div class="btn-group">
+                    <button id="btn-findings-prev" class="btn btn-secondary btn-sm" disabled>Previous</button>
+                    <button id="btn-findings-next" class="btn btn-secondary btn-sm" disabled>Next</button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

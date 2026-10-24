@@ -1,3 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Evidence – Kavach{% endblock %}
-{% block content %}<h1>Evidence</h1>{% endblock %}
+
+{% block content %}
+<div class="page-container stub-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Evidence &amp; Audit Ledger</h1>
+            <p class="page-subtitle">Hash-chained audit trail and cryptographic proof for privacy operations.</p>
+        </div>
+    </div>
+
+    <section class="card stub-card" aria-label="Feature coming soon">
+        <div class="stub-icon" aria-hidden="true">&#x1F510;</div>
+        <div class="badge badge-info mb-2">Coming Soon</div>
+        <h2 class="stub-title">Evidence Ledger is Coming Soon</h2>
+        <p class="stub-text">Cryptographically verifiable, hash-chained audit logging to prove erasure compliance, access grants, and data governance steps without revealing raw personal data.</p>
+        <div class="stub-actions">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

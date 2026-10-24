@@ -23,43 +23,44 @@ bp = Blueprint("main", __name__)
 # Frontend Views
 # ---------------------------------------------------------------------------
 @bp.route("/")
-def index():
-    return render_template("scanner.html")
+@bp.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html", active_page="dashboard")
 
 
 @bp.route("/scanner")
 def scanner():
-    return render_template("scanner.html")
+    return render_template("scanner.html", active_page="scanner")
 
 
 @bp.route("/data-map")
 def data_map():
-    return render_template("data_map.html")
+    return render_template("data_map.html", active_page="data_map")
 
 
 @bp.route("/rights-desk")
 def rights_desk():
-    return render_template("rights_desk.html")
+    return render_template("rights_desk.html", active_page="rights_desk")
 
 
 @bp.route("/breach-simulator")
 def breach_simulator():
-    return render_template("breach_simulator.html")
+    return render_template("breach_simulator.html", active_page="breach_simulator")
 
 
 @bp.route("/risk-analysis")
 def risk_analysis():
-    return render_template("risk_analysis.html")
+    return render_template("risk_analysis.html", active_page="risk_analysis")
 
 
 @bp.route("/reports")
 def reports():
-    return render_template("reports.html")
+    return render_template("reports.html", active_page="reports")
 
 
 @bp.route("/evidence")
 def evidence():
-    return render_template("evidence.html")
+    return render_template("evidence.html", active_page="evidence")
 
 
 # ---------------------------------------------------------------------------
@@ -193,16 +194,114 @@ def api_person_detail(person_id: int):
     })
 
 
-@bp.route("/api/questionnaire", methods=["POST"])
-def api_questionnaire():
-    """Save answers for the 6 yes/no questionnaire keys."""
-    data = request.get_json(silent=True) or {}
-    answers = data.get("answers", data)
+@bp.route("/api/findings", methods=["GET"])
+def api_findings():
+    """Get detected findings with optional source and category filters."""
     conn = get_db()
     init_db()
-    saved = save_questionnaire_answers(answers, conn)
-    facts = collect_facts(conn)
-    return jsonify({"success": True, "saved": saved, "facts": facts})
+    cur = conn.cursor()
+
+    source_param = request.args.get("source", "").strip()
+    category_param = request.args.get("category", "").strip().lower()
+    limit_param = request.args.get("limit", "").strip()
+
+    query = """
+        SELECT f.id, f.source_id, f.record_key, f.location, f.category,
+               f.masked_sample, f.confidence, f.meta_json,
+               s.filename as source_name, s.type as source_type
+        FROM findings f
+        JOIN sources s ON f.source_id = s.id
+        WHERE 1=1
+    """
+    params = []
+
+    if source_param:
+        if source_param.isdigit():
+            query += " AND f.source_id = ?"
+            params.append(int(source_param))
+        else:
+            query += " AND s.filename = ?"
+            params.append(source_param)
+
+    if category_param:
+        query += " AND f.category = ?"
+        params.append(category_param)
+
+    query += " ORDER BY f.id ASC"
+
+    if limit_param and limit_param.isdigit():
+        query += f" LIMIT {int(limit_param)}"
+
+    cur.execute(query, params)
+    rows = cur.fetchall()
+
+    from app.inventory import SENSITIVE_CATEGORIES
+
+    findings = []
+    for r in rows:
+        meta = json.loads(r["meta_json"]) if r["meta_json"] else None
+        is_sensitive = r["category"] in SENSITIVE_CATEGORIES or (meta and meta.get("is_minor"))
+        findings.append({
+            "id": r["id"],
+            "source_id": r["source_id"],
+            "source_name": r["source_name"],
+            "source_type": r["source_type"],
+            "record_key": r["record_key"],
+            "location": r["location"],
+            "category": r["category"],
+            "masked_sample": r["masked_sample"],
+            "confidence": r["confidence"],
+            "meta": meta,
+            "is_sensitive": bool(is_sensitive),
+        })
+
+    # Also compute aggregate category counts per source
+    cur.execute("""
+        SELECT f.source_id, f.category, COUNT(*) as cnt
+        FROM findings f
+        GROUP BY f.source_id, f.category
+    """)
+    source_cat_counts = {}
+    for r in cur.fetchall():
+        s_id = str(r["source_id"])
+        if s_id not in source_cat_counts:
+            source_cat_counts[s_id] = {}
+        source_cat_counts[s_id][r["category"]] = r["cnt"]
+
+    # Compute overall category counts
+    cur.execute("""
+        SELECT category, COUNT(*) as cnt
+        FROM findings
+        GROUP BY category
+        ORDER BY cnt DESC
+    """)
+    category_counts = {r["category"]: r["cnt"] for r in cur.fetchall()}
+
+    return jsonify({
+        "findings": findings,
+        "total": len(findings),
+        "source_category_counts": source_cat_counts,
+        "category_counts": category_counts,
+    })
+
+
+@bp.route("/api/questionnaire", methods=["GET", "POST"])
+def api_questionnaire():
+    """Get or save answers for the 6 yes/no questionnaire keys."""
+    conn = get_db()
+    init_db()
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        answers = data.get("answers", data)
+        saved = save_questionnaire_answers(answers, conn)
+        facts = collect_facts(conn)
+        return jsonify({"success": True, "saved": saved, "facts": facts})
+    else:
+        cur = conn.cursor()
+        cur.execute("SELECT key, answer FROM questionnaire")
+        answers = {row["key"]: row["answer"] for row in cur.fetchall()}
+        facts = collect_facts(conn)
+        return jsonify({"answers": answers, "facts": facts})
 
 
 @bp.route("/api/risks", methods=["GET"])
