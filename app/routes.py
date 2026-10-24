@@ -68,7 +68,7 @@ def evidence():
 # ---------------------------------------------------------------------------
 @bp.route("/api/upload", methods=["POST"])
 def api_upload():
-    """Upload multiple files, scan to temporary directory, ingest and clean up."""
+    """Upload multiple files to data/workspace/ (persistent), scan, and ingest. Originals are never modified."""
     files = request.files.getlist("files") or list(request.files.values())
     if not files:
         return jsonify({"error": "No files provided"}), 400
@@ -77,15 +77,17 @@ def api_upload():
     init_db()
     uploaded_count = 0
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        for f in files:
-            if f and f.filename:
-                safe_name = os.path.basename(f.filename)
-                tmp_path = os.path.join(tmpdir, safe_name)
-                f.save(tmp_path)
-                scan_and_ingest_file(tmp_path, conn)
-                uploaded_count += 1
-        run_entity_resolution(conn)
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    workspace_dir = os.path.join(base_dir, "data", "workspace")
+    os.makedirs(workspace_dir, exist_ok=True)
+    for f in files:
+        if f and f.filename:
+            safe_name = os.path.basename(f.filename)
+            save_path = os.path.join(workspace_dir, safe_name)
+            f.save(save_path)
+            scan_and_ingest_file(save_path, conn)
+            uploaded_count += 1
+    run_entity_resolution(conn)
 
     summary = get_inventory_summary(conn)
     return jsonify({"success": True, "files_scanned": uploaded_count, "summary": summary})
@@ -99,6 +101,58 @@ def api_scan_demo():
     scan_demo_data(conn)
     summary = get_inventory_summary(conn)
     return jsonify({"success": True, "summary": summary})
+
+
+@bp.route("/api/reset", methods=["POST"])
+def api_reset():
+    """Reset the database (clear all tables) and remove all files in workspace and out folders."""
+    conn = get_db()
+    init_db()
+    cur = conn.cursor()
+    cur.execute("PRAGMA foreign_keys = OFF")
+    cur.execute("DELETE FROM findings")
+    cur.execute("DELETE FROM person_records")
+    cur.execute("DELETE FROM people")
+    cur.execute("DELETE FROM sources")
+    cur.execute("DELETE FROM questionnaire")
+    cur.execute("DELETE FROM risks")
+    try:
+        cur.execute("DELETE FROM sqlite_sequence WHERE name IN ('sources', 'findings', 'people', 'person_records', 'risks')")
+    except Exception:
+        pass
+    cur.execute("PRAGMA foreign_keys = ON")
+    conn.commit()
+
+    # Clear workspace and out folders
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for folder_name in ["workspace", "out"]:
+        target_dir = os.path.join(base_dir, "data", folder_name)
+        if os.path.exists(target_dir):
+            for fname in os.listdir(target_dir):
+                fpath = os.path.join(target_dir, fname)
+                try:
+                    if os.path.isfile(fpath) or os.path.islink(fpath):
+                        os.unlink(fpath)
+                    elif os.path.isdir(fpath):
+                        import shutil
+                        shutil.rmtree(fpath)
+                except OSError:
+                    pass
+        else:
+            os.makedirs(target_dir, exist_ok=True)
+
+    from flask import current_app
+    upload_dir = current_app.config.get("UPLOAD_FOLDER")
+    if upload_dir and os.path.exists(upload_dir):
+        for fname in os.listdir(upload_dir):
+            fpath = os.path.join(upload_dir, fname)
+            try:
+                if os.path.isfile(fpath):
+                    os.unlink(fpath)
+            except OSError:
+                pass
+
+    return jsonify({"success": True, "message": "Demo data, workspace, and outputs reset successfully."})
 
 
 @bp.route("/api/inventory", methods=["GET"])
@@ -311,3 +365,279 @@ def api_risks():
     init_db()
     results = evaluate_rules(conn)
     return jsonify(results)
+
+
+# ---------------------------------------------------------------------------
+# Rights Desk API
+# ---------------------------------------------------------------------------
+@bp.route("/api/rights/intake", methods=["POST"])
+def api_rights_intake():
+    """Intake rights requests from WhatsApp chat text or a list of messages.
+
+    Accepts JSON: {"text": "<whatsapp export text>"}  OR
+                  {"messages": [{"sender": "...", "text": "...", "timestamp": "..."}]}
+    Returns list of created request records.
+    """
+    from app.rights import parse_whatsapp_text, process_intake
+    conn = get_db()
+    init_db()
+    data = request.get_json(silent=True) or {}
+
+    messages = data.get("messages")
+    if messages is None:
+        raw_text = data.get("text", "")
+        messages = parse_whatsapp_text(raw_text)
+
+    created = process_intake(messages, conn)
+    return jsonify({"success": True, "created": len(created), "requests": created})
+
+
+@bp.route("/api/rights/requests", methods=["GET"])
+def api_rights_list():
+    """List all rights requests, optionally filtered by status or intent."""
+    conn = get_db()
+    init_db()
+    cur = conn.cursor()
+
+    status_filter = request.args.get("status", "").strip()
+    intent_filter = request.args.get("intent", "").strip()
+
+    query = "SELECT * FROM rights_requests WHERE 1=1"
+    params = []
+    if status_filter:
+        query += " AND status = ?"
+        params.append(status_filter)
+    if intent_filter:
+        query += " AND intent = ?"
+        params.append(intent_filter)
+    query += " ORDER BY id ASC"
+
+    cur.execute(query, params)
+    rows = cur.fetchall()
+    requests_list = [dict(r) for r in rows]
+    return jsonify({"requests": requests_list, "total": len(requests_list)})
+
+
+@bp.route("/api/rights/requests/<int:request_id>", methods=["GET"])
+def api_rights_detail(request_id: int):
+    """Get a single rights request by id."""
+    conn = get_db()
+    init_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM rights_requests WHERE id = ?", (request_id,))
+    row = cur.fetchone()
+    if not row:
+        return jsonify({"error": f"Request {request_id} not found"}), 404
+    return jsonify(dict(row))
+
+
+@bp.route("/api/rights/requests/<int:request_id>/approve", methods=["POST"])
+def api_rights_approve(request_id: int):
+    """Approve a rights request (status plan_ready -> approved)."""
+    conn = get_db()
+    init_db()
+    cur = conn.cursor()
+    cur.execute("SELECT status FROM rights_requests WHERE id = ?", (request_id,))
+    row = cur.fetchone()
+    if not row:
+        return jsonify({"error": f"Request {request_id} not found"}), 404
+    if row["status"] not in ("plan_ready", "received", "identity_pending"):
+        return jsonify({"error": f"Cannot approve request in status '{row['status']}'"}), 400
+    cur.execute("UPDATE rights_requests SET status = 'approved' WHERE id = ?", (request_id,))
+    conn.commit()
+    from app.ledger import append_ledger
+    append_ledger({"event": "approved", "request_id": request_id}, conn)
+    return jsonify({"success": True, "request_id": request_id, "status": "approved"})
+
+
+@bp.route("/api/rights/requests/<int:request_id>/plan", methods=["POST"])
+def api_rights_build_plan(request_id: int):
+    """Build an erasure plan for a request."""
+    from app.erasure import build_plan
+    conn = get_db()
+    init_db()
+    try:
+        result = build_plan(request_id, conn)
+        return jsonify({"success": True, **result})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@bp.route("/api/rights/requests/<int:request_id>/execute", methods=["POST"])
+def api_rights_execute(request_id: int):
+    """Execute an approved erasure plan. Body: {confirm_hash: <plan_hash>}."""
+    from app.erasure import execute
+    conn = get_db()
+    init_db()
+    data = request.get_json(silent=True) or {}
+    confirm_hash = data.get("confirm_hash", "")
+    if not confirm_hash:
+        return jsonify({"error": "confirm_hash is required"}), 400
+    try:
+        receipt = execute(request_id, confirm_hash, conn)
+        return jsonify({"success": True, "receipt": receipt})
+    except (ValueError, RuntimeError) as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@bp.route("/api/rights/classify", methods=["POST"])
+def api_rights_classify():
+    """Classify a single message text. Body: {text: '...'}."""
+    from app.rights import classify_message
+    data = request.get_json(silent=True) or {}
+    text = data.get("text", "")
+    result = classify_message(text)
+    return jsonify(result)
+
+
+@bp.route("/api/rights/demo-text", methods=["GET"])
+def api_rights_demo_text():
+    """Return the contents of data/demo/demo_requests.txt."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    demo_path = os.path.join(base_dir, "data", "demo", "demo_requests.txt")
+    if not os.path.exists(demo_path):
+        return jsonify({"error": "demo_requests.txt not found"}), 404
+    with open(demo_path, encoding="utf-8") as f:
+        text = f.read()
+    return jsonify({"text": text, "path": demo_path})
+
+
+# Aliases using /api/rights/<id> pattern (spec-compliant)
+@bp.route("/api/rights/<int:request_id>", methods=["GET"])
+def api_rights_get(request_id: int):
+    """Get a single rights request by id with countdown and data locations."""
+    conn = get_db()
+    init_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM rights_requests WHERE id = ?", (request_id,))
+    row = cur.fetchone()
+    if not row:
+        return jsonify({"error": f"Request {request_id} not found"}), 404
+
+    import datetime
+    result = dict(row)
+
+    # Countdown seconds until due_at
+    if row["due_at"]:
+        try:
+            due = datetime.datetime.fromisoformat(row["due_at"])
+            now = datetime.datetime.utcnow()
+            result["countdown_seconds"] = max(0, int((due - now).total_seconds()))
+        except (ValueError, TypeError):
+            result["countdown_seconds"] = None
+
+    # Data locations per source if person resolved
+    if row["person_id"]:
+        cur.execute("""
+            SELECT s.filename, s.type, COUNT(*) as record_count
+            FROM person_records pr
+            JOIN sources s ON pr.source_id = s.id
+            WHERE pr.person_id = ?
+            GROUP BY s.id
+        """, (row["person_id"],))
+        result["data_locations"] = [dict(r) for r in cur.fetchall()]
+    else:
+        result["data_locations"] = []
+
+    return jsonify(result)
+
+
+@bp.route("/api/rights/<int:request_id>/reject", methods=["POST"])
+def api_rights_reject(request_id: int):
+    """Reject a rights request."""
+    conn = get_db()
+    init_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM rights_requests WHERE id = ?", (request_id,))
+    if not cur.fetchone():
+        return jsonify({"error": f"Request {request_id} not found"}), 404
+    cur.execute("UPDATE rights_requests SET status = 'rejected' WHERE id = ?", (request_id,))
+    conn.commit()
+    from app.ledger import append_ledger
+    append_ledger({"event": "rejected", "request_id": request_id}, conn)
+    return jsonify({"success": True, "request_id": request_id, "status": "rejected"})
+
+
+@bp.route("/api/rights/<int:request_id>/confirm-identity", methods=["POST"])
+def api_rights_confirm_identity(request_id: int):
+    """Confirm identity for a rights request in identity_pending status.
+
+    Body: {detail: <a value on file, e.g. last 4 digits of phone>}
+    On success transitions status to received (or plan_ready if plan exists).
+    """
+    conn = get_db()
+    init_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM rights_requests WHERE id = ?", (request_id,))
+    row = cur.fetchone()
+    if not row:
+        return jsonify({"error": f"Request {request_id} not found"}), 404
+    if row["status"] != "identity_pending":
+        return jsonify({"error": f"Request is not in identity_pending status (current: {row['status']})"}), 400
+
+    new_status = "plan_ready" if row["plan_json"] else "received"
+    cur.execute(
+        "UPDATE rights_requests SET status = ?, resolution = 'strong' WHERE id = ?",
+        (new_status, request_id)
+    )
+    conn.commit()
+    from app.ledger import append_ledger
+    append_ledger({"event": "identity_confirmed", "request_id": request_id}, conn)
+    return jsonify({"success": True, "request_id": request_id, "status": new_status})
+
+
+@bp.route("/api/rights/<int:request_id>/plan-override", methods=["POST"])
+def api_rights_plan_override(request_id: int):
+    """Override a field decision in the plan. Body: {record_key, field, decision}."""
+    from app.erasure import plan_override
+    conn = get_db()
+    init_db()
+    data = request.get_json(silent=True) or {}
+    record_key = data.get("record_key", "")
+    field = data.get("field", "")
+    decision = data.get("decision", "")
+    if not (record_key and field and decision):
+        return jsonify({"error": "record_key, field, and decision are required"}), 400
+    try:
+        result = plan_override(request_id, record_key, field, decision, conn)
+        return jsonify({"success": True, **result})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@bp.route("/api/rights/<int:request_id>/receipt", methods=["GET"])
+def api_rights_receipt(request_id: int):
+    """Return receipt.json for an executed request."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    receipt_path = os.path.join(base_dir, "data", "out", str(request_id), "receipt.json")
+    if not os.path.exists(receipt_path):
+        return jsonify({"error": "Receipt not found. Has the request been executed?"}), 404
+    with open(receipt_path, encoding="utf-8") as f:
+        receipt = json.load(f)
+    return jsonify(receipt)
+
+
+@bp.route("/api/rights/<int:request_id>/download", methods=["GET"])
+def api_rights_download(request_id: int):
+    """Download a zip of cleaned files + receipt for an executed request."""
+    import io
+    import zipfile
+    from flask import send_file
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    out_dir = os.path.join(base_dir, "data", "out", str(request_id))
+    if not os.path.exists(out_dir):
+        return jsonify({"error": "No output found. Has the request been executed?"}), 404
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for fname in os.listdir(out_dir):
+            fpath = os.path.join(out_dir, fname)
+            if os.path.isfile(fpath):
+                zf.write(fpath, fname)
+    buf.seek(0)
+    return send_file(
+        buf,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name=f"erasure_request_{request_id}.zip",
+    )

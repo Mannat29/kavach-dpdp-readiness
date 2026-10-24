@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
 function initApp() {
     initGlobalAlerts();
     initDemoScanButtons();
+    initResetDemoButton();
+    initVerifyPopovers();
 
     if (document.querySelector(".dashboard-page")) {
         initDashboard();
@@ -76,7 +78,7 @@ function initDemoScanButtons() {
         btn.addEventListener("click", async () => {
             setBtnLoading(btn, true, "Scanning demo data...");
             try {
-                const res = await apiFetch("/api/scan-demo", { method: "POST" });
+                await apiFetch("/api/scan-demo", { method: "POST" });
                 showGlobalAlert("Demo dataset scanned successfully! Inventory and readiness score updated.", true);
                 reloadCurrentPageData();
             } catch (err) {
@@ -85,6 +87,27 @@ function initDemoScanButtons() {
                 setBtnLoading(btn, false, "Scan demo data");
             }
         });
+    });
+}
+
+function initResetDemoButton() {
+    const btnReset = document.getElementById("btn-reset-demo");
+    if (!btnReset) return;
+
+    btnReset.addEventListener("click", async () => {
+        const confirmed = window.confirm("Reset demo data and clear all scanned records?");
+        if (!confirmed) return;
+
+        btnReset.disabled = true;
+        try {
+            await apiFetch("/api/reset", { method: "POST" });
+            showGlobalAlert("Demo data reset successfully. Database is now empty.", true);
+            reloadCurrentPageData();
+        } catch (err) {
+            // Handled in apiFetch
+        } finally {
+            btnReset.disabled = false;
+        }
     });
 }
 
@@ -107,6 +130,105 @@ function reloadCurrentPageData() {
         loadDataMap();
     } else if (document.querySelector(".risk-analysis-page")) {
         loadRiskAnalysisData();
+    }
+}
+
+/* ==========================================================================
+   Verify Popover (global, data-driven)
+   ========================================================================== */
+
+let _activePopover = null;
+
+function initVerifyPopovers() {
+    // Delegate clicks on btn-verify-chip anywhere on the page
+    document.addEventListener("click", (e) => {
+        const chip = e.target.closest(".btn-verify-chip");
+        if (chip) {
+            e.stopPropagation();
+            const isOpen = chip.getAttribute("aria-expanded") === "true";
+            closeActivePopover();
+            if (!isOpen) {
+                openVerifyPopover(chip);
+            }
+            return;
+        }
+        // Click outside closes
+        closeActivePopover();
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeActivePopover();
+    });
+}
+
+function openVerifyPopover(triggerBtn) {
+    const citation = triggerBtn.dataset.citation || "";
+    const sourceUrl = triggerBtn.dataset.sourceUrl || "";
+
+    const popover = document.createElement("div");
+    popover.className = "verify-popover";
+    popover.setAttribute("role", "dialog");
+    popover.setAttribute("aria-modal", "false");
+    popover.setAttribute("aria-label", "Citation verification notice");
+
+    let actionHtml = "";
+    if (sourceUrl) {
+        actionHtml = `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer" class="open-source-link">&#x1F517; Open source</a>`;
+    }
+
+    popover.innerHTML = `
+        <p class="verify-popover-text">Not yet checked against the official text of the DPDP Act, 2023 and DPDP Rules, 2025.</p>
+        <p class="verify-popover-text">Reference: <span class="verify-popover-citation">${escapeHtml(citation)}</span>. Check before relying on it.</p>
+        <div class="verify-popover-actions">
+            <span class="text-muted" style="font-size:0.75rem;">Press Esc or click outside to close</span>
+            ${actionHtml}
+        </div>
+    `;
+
+    // Position relative to trigger
+    triggerBtn.setAttribute("aria-expanded", "true");
+    triggerBtn.style.position = "relative";
+
+    document.body.appendChild(popover);
+
+    // Position the popover
+    const rect = triggerBtn.getBoundingClientRect();
+    const scrollY = window.scrollY || window.pageYOffset;
+    const scrollX = window.scrollX || window.pageXOffset;
+
+    let top = rect.bottom + scrollY + 6;
+    let left = rect.left + scrollX;
+
+    // Ensure it doesn't go off screen right
+    if (left + 320 > window.innerWidth - 16) {
+        left = window.innerWidth - 336;
+    }
+
+    popover.style.position = "absolute";
+    popover.style.top = `${top}px`;
+    popover.style.left = `${left}px`;
+
+    _activePopover = { popover, triggerBtn };
+}
+
+function closeActivePopover() {
+    if (_activePopover) {
+        _activePopover.popover.remove();
+        _activePopover.triggerBtn.setAttribute("aria-expanded", "false");
+        _activePopover = null;
+    }
+}
+
+/** Build the citation chip HTML (verify or checked) */
+function buildCitationChip(rule) {
+    if (rule.verified) {
+        let checkedHtml = `<span class="btn-checked-chip">&#x2714; Checked</span>`;
+        if (rule.source_url) {
+            checkedHtml += ` <a href="${escapeHtml(rule.source_url)}" target="_blank" rel="noopener noreferrer" class="open-source-link">&#x1F517; Open source</a>`;
+        }
+        return `<span class="badge badge-citation">${escapeHtml(rule.citation_hint)} ${checkedHtml}</span>`;
+    } else {
+        return `<span class="badge badge-citation">${escapeHtml(rule.citation_hint)} <button class="btn-verify-chip" aria-expanded="false" data-citation="${escapeHtml(rule.citation_hint)}" data-source-url="${escapeHtml(rule.source_url || '')}">Verify &#x2139;</button></span>`;
     }
 }
 
@@ -314,7 +436,7 @@ function updateTopRisks(rules) {
         tr.innerHTML = `
             <td><span class="badge badge-${escapeHtml(r.severity)}">${escapeHtml(r.severity)}</span></td>
             <td><strong>${escapeHtml(r.title)}</strong></td>
-            <td><span class="badge badge-citation">${escapeHtml(r.citation_hint)} <span class="tag-verify">verify</span></span></td>
+            <td>${buildCitationChip(r)}</td>
             <td class="text-danger"><strong>-${escapeHtml(String(r.deduction))}</strong></td>
             <td>${escapeHtml(r.remediation)}</td>
         `;
@@ -325,14 +447,16 @@ function updateTopRisks(rules) {
 function syncQuestionnaireToggles(facts) {
     const keys = ["cctv", "personal_phones", "vendors", "breach_contact", "retention_policy", "children_served"];
     keys.forEach(k => {
-        const checkbox = document.getElementById(`q-${k.replace(/_/g, "-")}`);
-        const stateLabel = document.getElementById(`q-${k.replace(/_/g, "-")}-label`);
-        if (checkbox) {
-            const isYes = facts[k] === "yes";
-            checkbox.checked = isYes;
-            if (stateLabel) {
-                stateLabel.textContent = isYes ? "Yes" : "No";
-            }
+        const currentVal = (facts && facts[k]) ? facts[k] : "unanswered";
+        const group = document.querySelector(`.tri-btn[data-key="${k}"]`)?.parentElement;
+        if (group) {
+            group.querySelectorAll(".tri-btn").forEach(btn => {
+                if (btn.dataset.value === currentVal) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            });
         }
     });
 }
@@ -341,35 +465,33 @@ function initQuestionnaireHandlers() {
     const form = document.getElementById("questionnaire-form");
     if (!form) return;
 
-    const checkboxes = form.querySelectorAll(".toggle-input");
-    checkboxes.forEach(cb => {
-        cb.addEventListener("change", async () => {
-            const key = cb.dataset.key;
-            const isChecked = cb.checked;
-            const label = document.getElementById(`q-${key.replace(/_/g, "-")}-label`);
-            if (label) label.textContent = isChecked ? "Yes" : "No";
+    form.addEventListener("click", async (e) => {
+        const btn = e.target.closest(".tri-btn");
+        if (!btn) return;
 
-            // Gather all current answers
-            const answers = {};
-            checkboxes.forEach(c => {
-                answers[c.dataset.key] = c.checked ? "yes" : "no";
+        const group = btn.parentElement;
+        group.querySelectorAll(".tri-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        // Gather all current answers
+        const answers = {};
+        form.querySelectorAll(".tri-btn.active").forEach(activeBtn => {
+            answers[activeBtn.dataset.key] = activeBtn.dataset.value;
+        });
+
+        try {
+            await apiFetch("/api/questionnaire", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ answers }),
             });
 
-            try {
-                // Post to questionnaire, then get updated risks live
-                await apiFetch("/api/questionnaire", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ answers }),
-                });
-
-                const risks = await apiFetch("/api/risks");
-                updateScoreAndDeductions(risks);
-                updateTopRisks(risks.rules);
-            } catch (err) {
-                // Handled
-            }
-        });
+            const risks = await apiFetch("/api/risks");
+            updateScoreAndDeductions(risks);
+            updateTopRisks(risks.rules);
+        } catch (err) {
+            // Handled
+        }
     });
 }
 
@@ -477,19 +599,20 @@ function renderSourcesTable(sources, sourceCategoryCounts) {
         const countsMap = sourceCategoryCounts[String(s.id)] || {};
         const catBadges = Object.keys(countsMap).map(cat => {
             const isSens = ["aadhaar", "health_term", "bank_account", "pan"].includes(cat);
-            return `<span class="badge ${isSens ? 'badge-critical' : 'badge-neutral'}">${escapeHtml(cat)} (${countsMap[cat]})</span>`;
+            const label = cat.replace(/_/g, " ");
+            return `<span class="badge ${isSens ? 'badge-critical' : 'badge-neutral'}">${escapeHtml(label)} (${countsMap[cat]})</span>`;
         }).join(" ");
 
-        const sensBadge = s.has_sensitive
-            ? '<span class="badge badge-critical">Sensitive PII</span>'
-            : '<span class="badge badge-ok">Standard</span>';
+        const impactBadge = s.has_sensitive
+            ? '<span class="badge badge-critical">High-impact if leaked</span>'
+            : '<span class="badge badge-neutral">Personal data</span>';
 
         tr.innerHTML = `
             <td><strong>${escapeHtml(s.filename)}</strong></td>
             <td><span class="badge badge-neutral">.${escapeHtml(s.type)}</span></td>
             <td>${escapeHtml(String(s.record_count))}</td>
             <td><div class="category-tags-list">${catBadges || '<span class="text-muted">None</span>'}</div></td>
-            <td>${sensBadge}</td>
+            <td>${impactBadge}</td>
             <td class="text-muted">${escapeHtml(s.scanned_at || 'Just now')}</td>
         `;
         tbody.appendChild(tr);
@@ -518,7 +641,7 @@ function populateFindingsFilters(sources, categoryCounts) {
         Object.keys(categoryCounts).sort().forEach(cat => {
             const opt = document.createElement("option");
             opt.value = cat;
-            opt.textContent = `${cat} (${categoryCounts[cat]})`;
+            opt.textContent = `${cat.replace(/_/g, " ")} (${categoryCounts[cat]})`;
             filterCategory.appendChild(opt);
         });
         filterCategory.value = curVal;
@@ -574,9 +697,10 @@ function renderFindingsPage() {
     pageItems.forEach(f => {
         const tr = document.createElement("tr");
 
+        const catLabel = (f.category || "").replace(/_/g, " ");
         const catBadge = f.is_sensitive
-            ? `<span class="badge badge-critical">${escapeHtml(f.category)}</span>`
-            : `<span class="badge badge-neutral">${escapeHtml(f.category)}</span>`;
+            ? `<span class="badge badge-critical">${escapeHtml(catLabel)}</span>`
+            : `<span class="badge badge-neutral">${escapeHtml(catLabel)}</span>`;
 
         let details = "-";
         if (f.meta) {
@@ -617,6 +741,8 @@ function renderFindingsPage() {
 let cySources = null;
 let cyPerson = null;
 let dataMapPeople = [];
+// Track collapsed groups in person view: key = "src:<source_name>", value = { collapsed: bool, nodeIds: [...] }
+let personGraphCollapseState = {};
 
 function initDataMap() {
     const btnModeSources = document.getElementById("mode-btn-sources");
@@ -704,6 +830,9 @@ async function loadDataMap() {
         if (inventory.total_sources === 0) {
             if (emptyState) emptyState.style.display = "block";
             if (mapContent) mapContent.style.display = "none";
+            if (cySources) { cySources.destroy(); cySources = null; }
+            if (cyPerson) { cyPerson.destroy(); cyPerson = null; }
+            dataMapPeople = [];
             return;
         }
 
@@ -717,6 +846,12 @@ async function loadDataMap() {
     }
 }
 
+/** Shorten a label for Cytoscape to max ~20 chars per line, replacing _ with space */
+function shortLabel(cat, count) {
+    const label = cat.replace(/_/g, " ");
+    return `${label}\n(${count})`;
+}
+
 function renderSourcesGraph(sources, findingsData) {
     const container = document.getElementById("cy-sources-categories");
     if (!container || typeof cytoscape === "undefined") return;
@@ -728,18 +863,19 @@ function renderSourcesGraph(sources, findingsData) {
 
     // Add source nodes
     sources.forEach(s => {
+        const fname = s.filename.length > 18 ? s.filename.slice(0, 16) + "…" : s.filename;
         elements.push({
             group: "nodes",
             data: {
                 id: `src_${s.id}`,
-                label: `${s.filename}\n(${s.type.toUpperCase()})`,
+                label: `${fname}\n(${s.type.toUpperCase()})`,
                 nodeType: "source",
                 recordCount: s.record_count,
             },
         });
     });
 
-    // Add category nodes
+    // Add category nodes — no "[Sensitive]" suffix, use colour only + legend
     Object.keys(catCounts).forEach(cat => {
         const isSens = sensitiveCats.has(cat);
         const count = catCounts[cat];
@@ -747,7 +883,7 @@ function renderSourcesGraph(sources, findingsData) {
             group: "nodes",
             data: {
                 id: `cat_${cat}`,
-                label: isSens ? `${cat} [Sensitive]\n(${count})` : `${cat}\n(${count})`,
+                label: shortLabel(cat, count),
                 nodeType: isSens ? "sensitive_category" : "category",
                 count: count,
             },
@@ -790,10 +926,11 @@ function renderSourcesGraph(sources, findingsData) {
                     "text-valign": "center",
                     "text-halign": "center",
                     "text-wrap": "wrap",
+                    "text-max-width": "120px",
                     "font-size": "12px",
                     "font-weight": "bold",
-                    "width": "110px",
-                    "height": "60px",
+                    "width": "130px",
+                    "height": "65px",
                     "border-width": 2,
                     "border-color": "#3b82f6",
                 },
@@ -808,10 +945,11 @@ function renderSourcesGraph(sources, findingsData) {
                     "text-valign": "center",
                     "text-halign": "center",
                     "text-wrap": "wrap",
-                    "font-size": "11px",
+                    "text-max-width": "100px",
+                    "font-size": "12px",
                     "font-weight": "bold",
-                    "width": "mapData(count, 1, 100, 50, 95)",
-                    "height": "mapData(count, 1, 100, 50, 95)",
+                    "width": "mapData(count, 1, 200, 65, 110)",
+                    "height": "mapData(count, 1, 200, 65, 110)",
                     "border-width": 2,
                     "border-color": "#bae6fd",
                 },
@@ -826,10 +964,11 @@ function renderSourcesGraph(sources, findingsData) {
                     "text-valign": "center",
                     "text-halign": "center",
                     "text-wrap": "wrap",
-                    "font-size": "11px",
+                    "text-max-width": "100px",
+                    "font-size": "12px",
                     "font-weight": "bold",
-                    "width": "mapData(count, 1, 100, 60, 110)",
-                    "height": "mapData(count, 1, 100, 60, 110)",
+                    "width": "mapData(count, 1, 200, 75, 120)",
+                    "height": "mapData(count, 1, 200, 75, 120)",
                     "border-width": 3,
                     "border-color": "#fecaca",
                 },
@@ -844,7 +983,7 @@ function renderSourcesGraph(sources, findingsData) {
                     "curve-style": "bezier",
                     "opacity": 0.85,
                     "label": "data(label)",
-                    "font-size": "10px",
+                    "font-size": "11px",
                     "color": "#334155",
                     "text-background-opacity": 0.8,
                     "text-background-color": "#ffffff",
@@ -854,17 +993,17 @@ function renderSourcesGraph(sources, findingsData) {
         ],
         layout: {
             name: "cose",
-            idealEdgeLength: 120,
-            nodeOverlap: 20,
+            idealEdgeLength: 150,
+            nodeOverlap: 30,
             refresh: 20,
             fit: true,
-            padding: 30,
+            padding: 50,
             randomize: false,
-            componentSpacing: 100,
-            nodeRepulsion: 400000,
+            componentSpacing: 120,
+            nodeRepulsion: 600000,
             edgeElasticity: 100,
             nestingFactor: 5,
-            gravity: 80,
+            gravity: 60,
             numIter: 1000,
             animate: false,
         },
@@ -919,18 +1058,23 @@ async function loadPersonGraph(personId) {
     try {
         const personData = await apiFetch(`/api/people/${personId}`);
         renderPersonGraph(personData);
-        // Initially show person summary in side panel
-        showPersonInSidePanel(personData);
+        showPersonSummaryInPanel(personData);
     } catch (err) {
         console.error("Failed to load person detail", err);
     }
 }
 
+/**
+ * Person view: collapse all name-only (probable) records from the same chat source
+ * into a single group node. Strong-link records stay individual.
+ */
 function renderPersonGraph(person) {
     const container = document.getElementById("cy-person");
     if (!container || typeof cytoscape === "undefined") return;
 
+    personGraphCollapseState = {};
     const elements = [];
+    const records = person.records || [];
 
     // Central Person Node
     elements.push({
@@ -943,31 +1087,97 @@ function renderPersonGraph(person) {
         },
     });
 
-    // Record Nodes & Edges
-    (person.records || []).forEach((r, idx) => {
-        const recId = `rec_${idx}`;
-        const isStrong = r.link_type === "strong";
+    // Group probable (name-only) records by source
+    const probableBySource = {};
+    const strongRecords = [];
 
+    records.forEach((r, idx) => {
+        if (r.link_type !== "strong") {
+            const src = r.source;
+            if (!probableBySource[src]) probableBySource[src] = [];
+            probableBySource[src].push({ r, idx });
+        } else {
+            strongRecords.push({ r, idx });
+        }
+    });
+
+    // Add strong-link individual nodes
+    strongRecords.forEach(({ r, idx }) => {
+        const recId = `rec_${idx}`;
+        const fname = r.source.length > 16 ? r.source.slice(0, 14) + "…" : r.source;
         elements.push({
             group: "nodes",
             data: {
                 id: recId,
-                label: `${r.source}\n${r.record_key}`,
+                label: `${fname}\n${r.record_key}`,
                 nodeType: "record",
                 recordData: r,
             },
         });
-
         elements.push({
             group: "edges",
             data: {
                 id: `edge_p_${recId}`,
                 source: `person_${person.id}`,
                 target: recId,
-                isStrong: isStrong,
-                label: isStrong ? "strong match" : "probable (name-only)",
+                isStrong: true,
+                label: "strong match",
             },
         });
+    });
+
+    // For each probable-group: one collapsed node if >1 line, else individual
+    Object.entries(probableBySource).forEach(([sourceName, items]) => {
+        if (items.length > 1) {
+            const groupId = `grp_prob_${sourceName.replace(/[^a-z0-9]/gi, "_")}`;
+            const fname = sourceName.length > 18 ? sourceName.slice(0, 16) + "…" : sourceName;
+            elements.push({
+                group: "nodes",
+                data: {
+                    id: groupId,
+                    label: `${fname}\n${items.length} lines (probable)`,
+                    nodeType: "record_group",
+                    groupSource: sourceName,
+                    groupItems: items.map(i => i.r),
+                    collapsed: true,
+                },
+            });
+            elements.push({
+                group: "edges",
+                data: {
+                    id: `edge_p_${groupId}`,
+                    source: `person_${person.id}`,
+                    target: groupId,
+                    isStrong: false,
+                    label: "probable (name-only)",
+                },
+            });
+            personGraphCollapseState[groupId] = { collapsed: true, items: items.map(i => i.r), sourceName };
+        } else {
+            // Single probable record – show as individual
+            const { r, idx } = items[0];
+            const recId = `rec_${idx}`;
+            const fname = r.source.length > 16 ? r.source.slice(0, 14) + "…" : r.source;
+            elements.push({
+                group: "nodes",
+                data: {
+                    id: recId,
+                    label: `${fname}\n${r.record_key}`,
+                    nodeType: "record",
+                    recordData: r,
+                },
+            });
+            elements.push({
+                group: "edges",
+                data: {
+                    id: `edge_p_${recId}`,
+                    source: `person_${person.id}`,
+                    target: recId,
+                    isStrong: false,
+                    label: "probable (name-only)",
+                },
+            });
+        }
     });
 
     if (cyPerson) {
@@ -988,6 +1198,7 @@ function renderPersonGraph(person) {
                     "text-valign": "center",
                     "text-halign": "center",
                     "text-wrap": "wrap",
+                    "text-max-width": "110px",
                     "font-size": "13px",
                     "font-weight": "bold",
                     "width": "110px",
@@ -1007,11 +1218,33 @@ function renderPersonGraph(person) {
                     "text-valign": "center",
                     "text-halign": "center",
                     "text-wrap": "wrap",
+                    "text-max-width": "130px",
                     "font-size": "11px",
-                    "width": "140px",
+                    "width": "150px",
                     "height": "65px",
                     "border-width": 2,
                     "border-color": "#94a3b8",
+                    "cursor": "pointer",
+                },
+            },
+            {
+                selector: 'node[nodeType = "record_group"]',
+                style: {
+                    "shape": "round-rectangle",
+                    "background-color": "#f3e8ff",
+                    "color": "#6b21a8",
+                    "label": "data(label)",
+                    "text-valign": "center",
+                    "text-halign": "center",
+                    "text-wrap": "wrap",
+                    "text-max-width": "140px",
+                    "font-size": "11px",
+                    "font-weight": "bold",
+                    "width": "160px",
+                    "height": "70px",
+                    "border-width": 2,
+                    "border-color": "#9333ea",
+                    "border-style": "dashed",
                     "cursor": "pointer",
                 },
             },
@@ -1057,7 +1290,7 @@ function renderPersonGraph(person) {
                 return node.data("nodeType") === "person" ? 2 : 1;
             },
             levelWidth: function() { return 1; },
-            padding: 40,
+            padding: 50,
             fit: true,
         },
     });
@@ -1069,33 +1302,165 @@ function renderPersonGraph(person) {
         if (nodeType === "record") {
             showRecordInSidePanel(node.data("recordData"));
         } else if (nodeType === "person") {
-            showPersonInSidePanel(node.data("personData"));
+            showPersonSummaryInPanel(node.data("personData"));
+        } else if (nodeType === "record_group") {
+            // Toggle expand/collapse
+            const gid = node.id();
+            const state = personGraphCollapseState[gid];
+            if (!state) return;
+            if (state.collapsed) {
+                showGroupExpandedInPanel(state, node);
+            } else {
+                // Show group summary again when re-clicking
+                showGroupSummaryInPanel(state, node);
+            }
         }
     });
 }
 
-function showPersonInSidePanel(person) {
+function showPersonSummaryInPanel(person) {
     const title = document.getElementById("panel-title");
     const subtitle = document.getElementById("panel-subtitle");
     const body = document.getElementById("panel-body");
 
-    if (title) title.textContent = `${person.label} Identity Summary`;
-    if (subtitle) subtitle.textContent = "Data Principal entity profile";
+    if (title) title.textContent = `${person.label} — Data Principal`;
+    if (subtitle) subtitle.textContent = "Per-source record summary";
+
+    const records = person.records || [];
+    const bySource = {};
+    records.forEach(r => {
+        if (!bySource[r.source]) bySource[r.source] = { strong: 0, probable: 0 };
+        if (r.link_type === "strong") bySource[r.source].strong++;
+        else bySource[r.source].probable++;
+    });
+
+    const rows = Object.entries(bySource).map(([src, counts]) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:0.4rem 0; border-bottom:1px solid #e2e8f0;">
+            <strong style="font-size:0.85rem;">${escapeHtml(src)}</strong>
+            <div style="display:flex; gap:0.4rem; flex-wrap:wrap; justify-content:flex-end;">
+                ${counts.strong > 0 ? `<span class="badge badge-ok">${counts.strong} strong</span>` : ""}
+                ${counts.probable > 0 ? `<span class="badge badge-med">${counts.probable} probable</span>` : ""}
+            </div>
+        </div>
+    `).join("");
 
     if (body) {
         body.innerHTML = `
             <div class="panel-section">
-                <div class="panel-section-title">Principal Details</div>
-                <p><strong>Resolved Label:</strong> ${escapeHtml(person.label)}</p>
-                <p><strong>Masked Name:</strong> <code class="sample-code">${escapeHtml(person.masked_name || 'N/A')}</code></p>
-                <p><strong>Total Linked Records:</strong> ${person.record_count}</p>
+                <div class="panel-section-title">Linked Records by Source</div>
+                ${rows || '<p class="text-muted">No records</p>'}
             </div>
-            <div class="panel-section">
-                <div class="panel-section-title">Linked Data Stores</div>
-                <p class="text-muted">Click any outer record node in the graph to inspect exact masked PII samples and linkage confidence.</p>
+            <div class="panel-section mt-4">
+                <p class="text-muted" style="font-size:0.8rem;">Click any outer node to inspect masked PII samples and linkage confidence.</p>
             </div>
         `;
     }
+}
+
+function showGroupSummaryInPanel(state, node) {
+    const title = document.getElementById("panel-title");
+    const subtitle = document.getElementById("panel-subtitle");
+    const body = document.getElementById("panel-body");
+
+    if (title) title.textContent = `${escapeHtml(state.sourceName)} (probable group)`;
+    if (subtitle) subtitle.textContent = `${state.items.length} name-only linked records`;
+
+    if (body) {
+        body.innerHTML = `
+            <div class="panel-section">
+                <div class="panel-section-title">Collapsed Probable Records</div>
+                <p style="font-size:0.875rem;">${state.items.length} name-only records from <strong>${escapeHtml(state.sourceName)}</strong> are grouped here. These links are <em>probable</em> and may be inexact.</p>
+                <button id="btn-expand-group" class="btn btn-secondary btn-sm mt-4" type="button">Expand individual records</button>
+            </div>
+        `;
+        document.getElementById("btn-expand-group")?.addEventListener("click", () => {
+            expandGroupNode(node, state);
+        });
+    }
+    personGraphCollapseState[node.id()].collapsed = true;
+}
+
+function showGroupExpandedInPanel(state, node) {
+    expandGroupNode(node, state);
+}
+
+function expandGroupNode(groupNode, state) {
+    if (!cyPerson) return;
+    const gid = groupNode.id();
+
+    // Add individual record nodes
+    state.items.forEach((r, idx) => {
+        const recId = `${gid}_exp_${idx}`;
+        const fname = r.source.length > 16 ? r.source.slice(0, 14) + "…" : r.source;
+        const personNodeId = cyPerson.nodes('[nodeType = "person"]').first().id();
+
+        cyPerson.add([
+            {
+                group: "nodes",
+                data: {
+                    id: recId,
+                    label: `${fname}\n${r.record_key}`,
+                    nodeType: "record_expanded",
+                    recordData: r,
+                },
+                position: { x: groupNode.position("x") + (idx * 30), y: groupNode.position("y") + 100 },
+            },
+            {
+                group: "edges",
+                data: {
+                    id: `edge_exp_${recId}`,
+                    source: personNodeId,
+                    target: recId,
+                    isStrong: false,
+                    label: "probable",
+                },
+            },
+        ]);
+    });
+
+    // Apply style for expanded nodes
+    cyPerson.style().selector('node[nodeType = "record_expanded"]').style({
+        "shape": "round-rectangle",
+        "background-color": "#fdf4ff",
+        "color": "#6b21a8",
+        "label": "data(label)",
+        "text-valign": "center",
+        "text-halign": "center",
+        "text-wrap": "wrap",
+        "text-max-width": "130px",
+        "font-size": "10px",
+        "width": "140px",
+        "height": "55px",
+        "border-width": 1,
+        "border-color": "#c084fc",
+        "cursor": "pointer",
+    }).update();
+
+    // Hide the group node
+    groupNode.hide();
+    personGraphCollapseState[gid].collapsed = false;
+
+    cyPerson.layout({ name: "concentric", padding: 50, fit: true }).run();
+
+    // Show summary in panel
+    const title = document.getElementById("panel-title");
+    const body = document.getElementById("panel-body");
+    if (title) title.textContent = `${escapeHtml(state.sourceName)} — expanded`;
+    if (body) {
+        const rows = state.items.map(r => {
+            const findingsHtml = (r.findings || []).slice(0, 3).map(f => {
+                const isSens = ["aadhaar", "health_term", "bank_account", "pan"].includes(f.category);
+                return `<span class="badge ${isSens ? 'badge-critical' : 'badge-neutral'}">${escapeHtml(f.category)}: <code>${escapeHtml(f.masked_sample)}</code></span>`;
+            }).join(" ");
+            return `<div style="margin-bottom:0.4rem;"><code class="sample-code">${escapeHtml(r.record_key)}</code> ${findingsHtml || ""}</div>`;
+        }).join("");
+        body.innerHTML = `<div class="panel-section"><div class="panel-section-title">Expanded probable records (${state.items.length})</div>${rows}</div>`;
+    }
+
+    // Clicking expanded record nodes shows their detail
+    cyPerson.on("tap", 'node[nodeType = "record_expanded"]', (evt) => {
+        showRecordInSidePanel(evt.target.data("recordData"));
+    });
 }
 
 function showRecordInSidePanel(record) {
@@ -1114,10 +1479,11 @@ function showRecordInSidePanel(record) {
 
         const findingsHtml = (record.findings || []).map(f => {
             const isSens = ["aadhaar", "health_term", "bank_account", "pan"].includes(f.category);
+            const catLabel = (f.category || "").replace(/_/g, " ");
             return `
                 <div class="mb-2 p-2" style="background:#f8fafc; border-radius:4px; border:1px solid #e2e8f0;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span class="badge ${isSens ? 'badge-critical' : 'badge-neutral'}">${escapeHtml(f.category)}</span>
+                        <span class="badge ${isSens ? 'badge-critical' : 'badge-neutral'}">${escapeHtml(catLabel)}</span>
                         <span class="text-muted" style="font-size:0.75rem;">${Math.round(f.confidence * 100)}% conf</span>
                     </div>
                     <div><code class="sample-code">${escapeHtml(f.masked_sample)}</code></div>
@@ -1213,7 +1579,7 @@ function renderTriggeredRisks(triggered) {
                 <div class="risk-title-group">
                     <span class="badge badge-${escapeHtml(r.severity)}">${escapeHtml(r.severity)}</span>
                     <h3 class="risk-title">${escapeHtml(r.title)}</h3>
-                    <span class="badge badge-citation">${escapeHtml(r.citation_hint)} <span class="tag-verify">verify</span></span>
+                    ${buildCitationChip(r)}
                 </div>
                 <div class="risk-points-tag">-${escapeHtml(String(r.deduction))} pts deduction</div>
             </div>
@@ -1249,7 +1615,7 @@ function renderPassedRisks(passed) {
                 <div class="risk-title-group">
                     ${statusBadge}
                     <h3 class="risk-title">${escapeHtml(r.title)}</h3>
-                    <span class="badge badge-citation">${escapeHtml(r.citation_hint)} <span class="tag-verify">verify</span></span>
+                    ${buildCitationChip(r)}
                 </div>
                 <span class="text-success" style="font-weight:600; font-size:0.85rem;">0 pt deduction</span>
             </div>

@@ -5,7 +5,33 @@ CREATE TABLE IF NOT EXISTS sources (
     filename TEXT NOT NULL,
     type TEXT NOT NULL,
     record_count INTEGER DEFAULT 0,
-    scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    path TEXT
+);
+
+CREATE TABLE IF NOT EXISTS rights_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    intent TEXT NOT NULL,
+    sender_masked TEXT,
+    person_id INTEGER REFERENCES people(id),
+    resolution TEXT,
+    confidence REAL,
+    received_at TIMESTAMP,
+    due_at TIMESTAMP,
+    status TEXT NOT NULL DEFAULT 'received',
+    message_excerpt_masked TEXT,
+    plan_json TEXT,
+    plan_hash TEXT,
+    executed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ledger (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_json TEXT NOT NULL,
+    prev_hash TEXT,
+    entry_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS findings (

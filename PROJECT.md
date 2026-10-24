@@ -13,7 +13,7 @@ Commands:
 Product modules (UI nav labels): Scanner, Data Map, Rights Desk, Breach Simulator, Risk Analysis, Reports, Evidence.
 Code modules: ingest, detect, inventory (entity resolution), rules (YAML; each rule has id, citation, trigger, remediation, severity, "verify": true), rights (informal request catcher incl. Hinglish/Kannada-in-Latin keywords + erasure engine with residual re-scan), breach (blast-radius simulator + two-stage clocks + drafts), ledger (hash-chained audit + public /verify), reports.
 
-Principles: DB stores masked samples + salted hashes of identifiers, never raw values; uploads live in a temp dir; originals are never modified, erasure writes cleaned copies. Product name in UI, page titles and README is "Kavach".
+Principles: DB stores masked samples + salted hashes of identifiers, never raw values; uploads are kept in a local git-ignored workspace so cleaned copies can be produced; originals are never modified, erasure writes cleaned copies. Product name in UI, page titles and README is "Kavach".
 
 Build order (future tasks, not now): 1 synthetic data + detection + eval, 2 inventory + rules + dashboard, 3 request catcher + erasure, 4 breach simulator, 5 ledger + reports, 6 hardening + README.
 

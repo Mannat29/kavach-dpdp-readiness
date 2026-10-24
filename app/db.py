@@ -4,7 +4,7 @@ import sqlite3
 from typing import Optional
 
 DEFAULT_DB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "instance")
-DEFAULT_DB_PATH = os.path.join(DEFAULT_DB_DIR, "kavach.db")
+DEFAULT_DB_PATH = os.path.join(DEFAULT_DB_DIR, "kavach.sqlite")
 
 
 def get_db(db_path: Optional[str] = None) -> sqlite3.Connection:
@@ -55,6 +55,14 @@ def init_db(db_path: Optional[str] = None):
     conn = get_db(db_path)
     conn.executescript(schema_sql)
     conn.commit()
+
+    # Migration: add path column to sources if missing
+    try:
+        conn.execute("ALTER TABLE sources ADD COLUMN path TEXT")
+        conn.commit()
+    except Exception:
+        pass  # column already exists
+
     try:
         from flask import has_app_context
         if not has_app_context():

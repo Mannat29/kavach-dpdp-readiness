@@ -68,20 +68,22 @@ def collect_facts(conn=None) -> Dict[str, Any]:
 
     cur = conn.cursor()
 
-    # 1. Facts from Questionnaire
+    # 1. Facts from Questionnaire (default is 'unanswered')
     facts = {
-        "cctv": "no",
-        "personal_phones": "no",
-        "vendors": "no",
-        "breach_contact": "no",
-        "retention_policy": "no",
-        "children_served": "no",
+        "cctv": "unanswered",
+        "personal_phones": "unanswered",
+        "vendors": "unanswered",
+        "breach_contact": "unanswered",
+        "retention_policy": "unanswered",
+        "children_served": "unanswered",
     }
     cur.execute("SELECT key, answer FROM questionnaire")
     for row in cur.fetchall():
         k = row["key"].strip().lower()
         if k in QUESTIONNAIRE_KEYS:
-            facts[k] = row["answer"].strip().lower()
+            val = row["answer"].strip().lower()
+            if val in {"yes", "no", "unanswered"}:
+                facts[k] = val
 
     # 2. Facts from Inventory / Findings
     cur.execute("SELECT COUNT(*) as count FROM findings WHERE category = 'health_term'")
@@ -146,6 +148,12 @@ def evaluate_rules(conn=None) -> Dict[str, Any]:
     facts = collect_facts(conn)
     rules = load_rules()
 
+    # For scoring, treat 'unanswered' questionnaire keys as 'no'
+    scoring_facts = dict(facts)
+    for k in QUESTIONNAIRE_KEYS:
+        if scoring_facts.get(k) == "unanswered":
+            scoring_facts[k] = "no"
+
     cur = conn.cursor()
     cur.execute("DELETE FROM risks")
 
@@ -154,7 +162,18 @@ def evaluate_rules(conn=None) -> Dict[str, Any]:
 
     for r in rules:
         r_id = r["id"]
-        is_triggered = evaluate_condition(r["trigger"], facts)
+        is_triggered = evaluate_condition(r["trigger"], scoring_facts)
+
+        title = r["title"]
+        remediation = r["remediation"]
+
+        # If triggered because an answer was unanswered, risk text says 'not confirmed' instead of 'none' / 'No '
+        if r_id == "breach_contact_process" and facts.get("breach_contact") == "unanswered":
+            title = "Breach contact/process not confirmed"
+            remediation = "Breach contact/process not confirmed. Formulate a formal breach response plan and publish a designated breach point of contact to intimate the Data Protection Board and affected principals."
+        elif r_id == "retention_policy" and facts.get("retention_policy") == "unanswered":
+            title = "Retention policy not confirmed"
+            remediation = "Retention policy not confirmed. Establish a documented retention policy to periodically erase personal data once diagnostic, billing, or statutory purposes are completed."
 
         # Lawful basis for employee data is positive note, not violation
         if r_id == "employee_data_lawful_basis":
@@ -169,10 +188,10 @@ def evaluate_rules(conn=None) -> Dict[str, Any]:
             if is_triggered:
                 status = "triggered"
                 points = SEVERITY_WEIGHTS.get(r["severity"], 10)
-                note = r["remediation"]
+                note = remediation
                 deductions.append({
                     "rule_id": r_id,
-                    "title": r["title"],
+                    "title": title,
                     "severity": r["severity"],
                     "points": points,
                     "reason": note,
@@ -189,12 +208,14 @@ def evaluate_rules(conn=None) -> Dict[str, Any]:
 
         results.append({
             "id": r_id,
-            "title": r["title"],
+            "title": title,
             "citation_hint": r["citation_hint"],
             "severity": r["severity"],
             "status": status,
-            "remediation": r["remediation"],
+            "remediation": remediation,
             "verify": r.get("verify", True),
+            "verified": r.get("verified", False),
+            "source_url": r.get("source_url", ""),
             "deduction": points,
             "note": note,
         })
@@ -214,7 +235,7 @@ def evaluate_rules(conn=None) -> Dict[str, Any]:
 
 
 def save_questionnaire_answers(answers: Dict[str, str], conn=None) -> Dict[str, str]:
-    """Save questionnaire answers validating the 6 yes/no keys."""
+    """Save questionnaire answers validating keys as 'yes', 'no', or 'unanswered'."""
     if conn is None:
         conn = get_db()
 
@@ -223,7 +244,13 @@ def save_questionnaire_answers(answers: Dict[str, str], conn=None) -> Dict[str, 
     for k, v in answers.items():
         key = k.strip().lower()
         if key in QUESTIONNAIRE_KEYS:
-            ans = "yes" if str(v).strip().lower() in {"yes", "true", "1"} else "no"
+            val_str = str(v).strip().lower()
+            if val_str in {"yes", "true", "1"}:
+                ans = "yes"
+            elif val_str in {"no", "false", "0"}:
+                ans = "no"
+            else:
+                ans = "unanswered"
             cur.execute(
                 "INSERT INTO questionnaire (key, answer) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET answer = excluded.answer",
                 (key, ans),

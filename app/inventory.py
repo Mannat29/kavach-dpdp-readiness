@@ -55,13 +55,14 @@ class UnionFind:
             self.parent[rx] = ry
 
 
-def scan_and_ingest_file(fpath: str, conn=None) -> int:
+def scan_and_ingest_file(fpath: str, conn=None, path: str = None) -> int:
     """Scan a file and ingest findings into DB. Returns source_id."""
     if conn is None:
         conn = get_db()
 
     filename = os.path.basename(fpath)
     ext = os.path.splitext(filename)[1].lstrip(".").lower()
+    abs_path = path if path is not None else os.path.abspath(fpath)
 
     # Check if source already exists
     cur = conn.cursor()
@@ -72,11 +73,11 @@ def scan_and_ingest_file(fpath: str, conn=None) -> int:
         # Clear previous findings and person_records for this source to prevent duplication
         cur.execute("DELETE FROM findings WHERE source_id = ?", (source_id,))
         cur.execute("DELETE FROM person_records WHERE source_id = ?", (source_id,))
-        cur.execute("UPDATE sources SET scanned_at = CURRENT_TIMESTAMP WHERE id = ?", (source_id,))
+        cur.execute("UPDATE sources SET scanned_at = CURRENT_TIMESTAMP, path = ? WHERE id = ?", (abs_path, source_id))
     else:
         cur.execute(
-            "INSERT INTO sources (filename, type, record_count) VALUES (?, ?, 0)",
-            (filename, ext),
+            "INSERT INTO sources (filename, type, record_count, path) VALUES (?, ?, 0, ?)",
+            (filename, ext, abs_path),
         )
         source_id = cur.lastrowid
 
@@ -317,6 +318,6 @@ def scan_demo_data(conn=None, data_dir: Optional[str] = None):
     for fname in files:
         fpath = os.path.join(data_dir, fname)
         if os.path.exists(fpath):
-            scan_and_ingest_file(fpath, conn)
+            scan_and_ingest_file(fpath, conn, path=os.path.abspath(fpath))
 
     run_entity_resolution(conn)

@@ -19,16 +19,37 @@
             </div>
             <nav class="main-nav" aria-label="Primary Navigation">
                 <ul class="nav-list">
+                    {% if 'Dashboard' in enabled_pages %}
                     <li><a href="{{ url_for('main.dashboard') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" {% if active_page == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a></li>
+                    {% endif %}
+                    {% if 'Scanner' in enabled_pages %}
                     <li><a href="{{ url_for('main.scanner') }}" class="nav-link {% if active_page == 'scanner' %}active{% endif %}" {% if active_page == 'scanner' %}aria-current="page"{% endif %}>Scanner</a></li>
+                    {% endif %}
+                    {% if 'Data Map' in enabled_pages %}
                     <li><a href="{{ url_for('main.data_map') }}" class="nav-link {% if active_page == 'data_map' %}active{% endif %}" {% if active_page == 'data_map' %}aria-current="page"{% endif %}>Data Map</a></li>
+                    {% endif %}
+                    {% if 'Rights Desk' in enabled_pages %}
                     <li><a href="{{ url_for('main.rights_desk') }}" class="nav-link {% if active_page == 'rights_desk' %}active{% endif %}" {% if active_page == 'rights_desk' %}aria-current="page"{% endif %}>Rights Desk</a></li>
+                    {% endif %}
+                    {% if 'Breach Simulator' in enabled_pages %}
                     <li><a href="{{ url_for('main.breach_simulator') }}" class="nav-link {% if active_page == 'breach_simulator' %}active{% endif %}" {% if active_page == 'breach_simulator' %}aria-current="page"{% endif %}>Breach Simulator</a></li>
+                    {% endif %}
+                    {% if 'Risk Analysis' in enabled_pages %}
                     <li><a href="{{ url_for('main.risk_analysis') }}" class="nav-link {% if active_page == 'risk_analysis' %}active{% endif %}" {% if active_page == 'risk_analysis' %}aria-current="page"{% endif %}>Risk Analysis</a></li>
+                    {% endif %}
+                    {% if 'Reports' in enabled_pages %}
                     <li><a href="{{ url_for('main.reports') }}" class="nav-link {% if active_page == 'reports' %}active{% endif %}" {% if active_page == 'reports' %}aria-current="page"{% endif %}>Reports</a></li>
+                    {% endif %}
+                    {% if 'Evidence' in enabled_pages %}
                     <li><a href="{{ url_for('main.evidence') }}" class="nav-link {% if active_page == 'evidence' %}active{% endif %}" {% if active_page == 'evidence' %}aria-current="page"{% endif %}>Evidence</a></li>
+                    {% endif %}
                 </ul>
             </nav>
+            <div class="header-actions">
+                <button type="button" id="btn-reset-demo" class="btn btn-sm btn-reset-demo" title="Reset all demo data and start with an empty database" aria-label="Reset demo data">
+                    &#x21BA; Reset demo
+                </button>
+            </div>
         </div>
     </header>
 

@@ -41,7 +41,7 @@
             </div>
             <div class="stat-item stat-item-alert">
                 <span class="stat-number" id="scanner-stat-sensitive">0</span>
-                <span class="stat-title">Sensitive Sources</span>
+                <span class="stat-title">High-impact sources</span>
             </div>
         </section>
 
@@ -50,7 +50,7 @@
             <div class="card-header">
                 <div>
                     <h2 class="card-title">Per-Source Data Inventory</h2>
-                    <p class="card-subtitle">File types, records, detected data categories with counts, and statutory sensitivity flags.</p>
+                    <p class="card-subtitle">File types, records, detected data categories with counts, and high-impact data flags.</p>
                 </div>
             </div>
             <div class="table-responsive">
@@ -61,7 +61,7 @@
                             <th scope="col" style="width: 100px;">Type</th>
                             <th scope="col" style="width: 100px;">Records</th>
                             <th scope="col">Detected Categories &amp; Counts</th>
-                            <th scope="col" style="width: 140px;">Sensitivity</th>
+                            <th scope="col" style="width: 170px;">Impact if leaked</th>
                             <th scope="col" style="width: 160px;">Scanned Timestamp</th>
                         </tr>
                     </thead>
@@ -72,6 +72,7 @@
                     </tbody>
                 </table>
             </div>
+            <p class="table-legend-note">All items shown are personal data under the DPDP Act. Red marks data that causes the most harm if leaked (Aadhaar, PAN, bank account, health information, minors). This is Kavach's own prioritisation, not a legal category.</p>
         </section>
 
         <!-- 2) Filterable Findings Table -->

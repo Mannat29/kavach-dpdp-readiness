@@ -10,5 +10,7 @@ instance/
 uploads/
 tmp/
 dist/
+data/workspace/
+data/out/
 *.egg-info/
 .pytest_cache/

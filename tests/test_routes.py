@@ -99,3 +99,66 @@ def test_html_views_render(app_client):
         assert "Readiness aid, not legal advice. Citations pending verification." in html
         assert "Kavach" in html
 
+
+def test_api_reset_endpoint(app_client):
+    """Verify POST /api/reset clears all tables and reset demo state."""
+    # First scan demo data
+    res_scan = app_client.post("/api/scan-demo")
+    assert res_scan.status_code == 200
+
+    inv1 = app_client.get("/api/inventory").get_json()
+    assert inv1["total_sources"] > 0
+
+    # Reset
+    res_reset = app_client.post("/api/reset")
+    assert res_reset.status_code == 200
+    reset_data = res_reset.get_json()
+    assert reset_data["success"] is True
+
+    # Inventory must now be empty
+    inv2 = app_client.get("/api/inventory").get_json()
+    assert inv2["total_sources"] == 0
+    assert inv2["total_records"] == 0
+    assert inv2["total_findings"] == 0
+    assert inv2["total_people"] == 0
+
+
+def test_questionnaire_three_state_and_risk_text(app_client):
+    """Verify unanswered default treated as 'no' for scoring with 'not confirmed' risk text."""
+    # Initial state with no questionnaire answers
+    res = app_client.get("/api/risks")
+    assert res.status_code == 200
+    data = res.get_json()
+
+    # Default answers are 'unanswered'
+    assert data["facts"]["breach_contact"] == "unanswered"
+    assert data["facts"]["retention_policy"] == "unanswered"
+
+    # In scoring, unanswered is treated as 'no', but title/text says 'not confirmed'
+    breach_rule = next(r for r in data["rules"] if r["id"] == "breach_contact_process")
+    assert breach_rule["status"] == "triggered"
+    assert "not confirmed" in breach_rule["title"].lower()
+    assert "no " not in breach_rule["title"].lower()
+
+    retention_rule = next(r for r in data["rules"] if r["id"] == "retention_policy")
+    assert retention_rule["status"] == "triggered"
+    assert "not confirmed" in retention_rule["title"].lower()
+    assert "no " not in retention_rule["title"].lower()
+
+    # Now answer 'yes'
+    app_client.post("/api/questionnaire", json={"breach_contact": "yes", "retention_policy": "yes"})
+    data_yes = app_client.get("/api/risks").get_json()
+    assert data_yes["facts"]["breach_contact"] == "yes"
+    b_yes = next(r for r in data_yes["rules"] if r["id"] == "breach_contact_process")
+    assert b_yes["status"] == "ok"
+    r_yes = next(r for r in data_yes["rules"] if r["id"] == "retention_policy")
+    assert r_yes["status"] == "ok"
+
+    # Explicit 'no' restores standard 'No' risk text
+    app_client.post("/api/questionnaire", json={"breach_contact": "no", "retention_policy": "no"})
+    data_no = app_client.get("/api/risks").get_json()
+    b_no = next(r for r in data_no["rules"] if r["id"] == "breach_contact_process")
+    assert b_no["status"] == "triggered"
+    assert b_no["title"] == "No breach contact/process"
+
+
