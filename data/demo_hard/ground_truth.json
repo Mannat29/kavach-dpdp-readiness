@@ -1,0 +1,1022 @@
+[
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R2/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R2/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R2/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R2/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R2/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R2/C7",
+    "category": "health_term"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R3/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R3/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R3/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R3/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R3/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R3/C6",
+    "category": "health_term"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R4/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R4/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R4/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R4/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R4/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R4/C7",
+    "category": "pan"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R5/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R5/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R5/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R5/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R5/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R6/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R6/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R6/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R6/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R6/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R6/C7",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R7/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R7/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R7/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R7/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R7/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R8/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R8/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R8/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R8/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R8/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R8/C6",
+    "category": "health_term"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R8/C7",
+    "category": "health_term"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R9/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R9/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R9/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R9/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R9/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R10/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R10/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R10/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R10/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R10/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R10/C7",
+    "category": "health_term"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R11/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R11/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R11/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R11/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R11/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R12/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R12/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R12/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R12/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R12/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R12/C7",
+    "category": "health_term"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R13/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R13/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R13/C3",
+    "category": "email"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R13/C4",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R13/C5",
+    "category": "dob"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Active/R13/C6",
+    "category": "health_term"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R2/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R2/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R2/C3",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R3/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R3/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R3/C3",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R4/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R4/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R4/C3",
+    "category": "aadhaar"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R5/C1",
+    "category": "name"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R5/C2",
+    "category": "phone"
+  },
+  {
+    "source": "patients.xlsx",
+    "location": "Archived/R5/C3",
+    "category": "aadhaar"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R2/C2",
+    "category": "name"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R2/C3",
+    "category": "phone"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R2/C5",
+    "category": "gstin"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R3/C2",
+    "category": "name"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R3/C3",
+    "category": "phone"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R4/C2",
+    "category": "name"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R4/C3",
+    "category": "phone"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R4/C5",
+    "category": "gstin"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R5/C2",
+    "category": "name"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R5/C3",
+    "category": "phone"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R6/C2",
+    "category": "name"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R6/C3",
+    "category": "phone"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R6/C5",
+    "category": "gstin"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R7/C2",
+    "category": "name"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R7/C3",
+    "category": "phone"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R8/C2",
+    "category": "name"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R8/C3",
+    "category": "phone"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R8/C5",
+    "category": "gstin"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R9/C2",
+    "category": "name"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R9/C3",
+    "category": "phone"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R10/C2",
+    "category": "name"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R10/C3",
+    "category": "phone"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R10/C5",
+    "category": "gstin"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R11/C2",
+    "category": "name"
+  },
+  {
+    "source": "billing.csv",
+    "location": "R11/C3",
+    "category": "phone"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R2/C1",
+    "category": "name"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R2/C2",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R2/C3",
+    "category": "phone"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R2/C4",
+    "category": "bank_account"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R2/C5",
+    "category": "ifsc"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R2/C6",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R3/C1",
+    "category": "name"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R3/C2",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R3/C3",
+    "category": "phone"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R3/C4",
+    "category": "bank_account"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R3/C5",
+    "category": "ifsc"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R3/C6",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R4/C1",
+    "category": "name"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R4/C2",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R4/C3",
+    "category": "phone"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R4/C4",
+    "category": "bank_account"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R4/C5",
+    "category": "ifsc"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R4/C6",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R5/C1",
+    "category": "name"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R5/C2",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R5/C3",
+    "category": "phone"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R5/C4",
+    "category": "bank_account"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R5/C5",
+    "category": "ifsc"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R5/C6",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R6/C1",
+    "category": "name"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R6/C2",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R6/C3",
+    "category": "phone"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R6/C4",
+    "category": "bank_account"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R6/C5",
+    "category": "ifsc"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R6/C6",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R7/C1",
+    "category": "name"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R7/C2",
+    "category": "pan"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R7/C3",
+    "category": "phone"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R7/C4",
+    "category": "bank_account"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R7/C5",
+    "category": "ifsc"
+  },
+  {
+    "source": "staff.csv",
+    "location": "R7/C6",
+    "category": "pan"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R2/C2",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R2/C3",
+    "category": "phone"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R2/C4",
+    "category": "email"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R2/C5",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R3/C2",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R3/C3",
+    "category": "phone"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R3/C4",
+    "category": "email"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R4/C2",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R4/C3",
+    "category": "phone"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R4/C4",
+    "category": "email"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R5/C2",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R5/C3",
+    "category": "phone"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R5/C4",
+    "category": "email"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R5/C5",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R6/C2",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R6/C3",
+    "category": "phone"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R6/C4",
+    "category": "email"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R7/C2",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R7/C3",
+    "category": "phone"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R7/C4",
+    "category": "email"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R8/C2",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R8/C3",
+    "category": "phone"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R8/C4",
+    "category": "email"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R8/C5",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R9/C2",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R9/C3",
+    "category": "phone"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R9/C4",
+    "category": "email"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R10/C2",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R10/C3",
+    "category": "phone"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R10/C4",
+    "category": "email"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R11/C2",
+    "category": "name"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R11/C3",
+    "category": "phone"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R11/C4",
+    "category": "email"
+  },
+  {
+    "source": "appointments_form.csv",
+    "location": "R11/C5",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 1",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 1",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 1",
+    "category": "phone"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 2",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 2",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 2",
+    "category": "email"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 3",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 3",
+    "category": "aadhaar"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 4",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 5",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 5",
+    "category": "pan"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 6",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 6",
+    "category": "health_term"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 7",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 8",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 9",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 10",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 11",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 12",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 13",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 14",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 15",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 16",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 17",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 18",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 19",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 20",
+    "category": "name"
+  },
+  {
+    "source": "whatsapp_chat.txt",
+    "location": "line 21",
+    "category": "name"
+  }
+]

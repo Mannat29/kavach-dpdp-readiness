@@ -192,6 +192,9 @@ def main():
     clinic_gstin = make_gstin(rng)
     clinic_pan = make_pan(rng, "S")  # Sri Lakshmi
 
+    name_to_person_idx = {people[i]["name"]: i for i in range(12)}
+    shared_people_records = {i: [] for i in range(12)}
+
     # -----------------------------------------------------------------------
     # 1. patients.xlsx
     # -----------------------------------------------------------------------
@@ -222,6 +225,9 @@ def main():
 
         row_num = idx + 2  # Excel row (1-indexed, header is row 1)
         ws.append([p["name"], phone_fmt, p["email"], aadhaar_display, p["dob"], test, notes])
+
+        if idx < 12:
+            shared_people_records[idx].append({"source": "patients.xlsx", "record_key": f"patients.xlsx:Patients/R{row_num}"})
 
         # Ground truth
         ground_truth.append({"source": "patients.xlsx", "location": f"Patients/R{row_num}/C1", "category": "name"})
@@ -256,6 +262,9 @@ def main():
             row_num = i + 2
             writer.writerow([inv, p["name"], phone_fmt, amount, gstin])
 
+            if idx < 12:
+                shared_people_records[idx].append({"source": "billing.csv", "record_key": f"billing.csv:R{row_num}"})
+
             ground_truth.append({"source": "billing.csv", "location": f"R{row_num}/C2", "category": "name"})
             ground_truth.append({"source": "billing.csv", "location": f"R{row_num}/C3", "category": "phone"})
             if gstin:
@@ -278,6 +287,9 @@ def main():
             salary = rng.randint(15000, 80000)
             row_num = i + 2
             writer.writerow([p["name"], p["pan"], phone_fmt, salary, p["bank_account"], p["ifsc"]])
+
+            if idx < 12:
+                shared_people_records[idx].append({"source": "staff.csv", "record_key": f"staff.csv:R{row_num}"})
 
             ground_truth.append({"source": "staff.csv", "location": f"R{row_num}/C1", "category": "name"})
             ground_truth.append({"source": "staff.csv", "location": f"R{row_num}/C2", "category": "pan"})
@@ -311,6 +323,9 @@ def main():
             reason = rng.choice(reasons)
             row_num = i + 2
             writer.writerow([ts_str, name, phone_fmt, email, reason])
+
+            if i < 12:
+                shared_people_records[i].append({"source": "appointments_form.csv", "record_key": f"appointments_form.csv:R{row_num}"})
 
             ground_truth.append({"source": "appointments_form.csv", "location": f"R{row_num}/C2", "category": "name"})
             ground_truth.append({"source": "appointments_form.csv", "location": f"R{row_num}/C3", "category": "phone"})
@@ -368,6 +383,8 @@ def main():
         msg = rng.choice(clinic_messages)
         add_line(sender, msg)
         line_num += 1
+        if sender in name_to_person_idx:
+            shared_people_records[name_to_person_idx[sender]].append({"source": "whatsapp_chat.txt", "record_key": f"line {line_num}"})
         ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {line_num}", "category": "name"})
 
     # Messages with embedded PII
@@ -432,6 +449,8 @@ def main():
     for sender, msg, extras in pii_messages:
         add_line(sender, msg)
         line_num += 1
+        if sender in name_to_person_idx:
+            shared_people_records[name_to_person_idx[sender]].append({"source": "whatsapp_chat.txt", "record_key": f"line {line_num}"})
         ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {line_num}", "category": "name"})
         for e in extras:
             ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {line_num}", "category": e["category"]})
@@ -457,6 +476,8 @@ def main():
         msg = rng.choice(filler_msgs)
         add_line(sender, msg)
         line_num += 1
+        if sender in name_to_person_idx:
+            shared_people_records[name_to_person_idx[sender]].append({"source": "whatsapp_chat.txt", "record_key": f"line {line_num}"})
         ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {line_num}", "category": "name"})
 
     # 3 erasure-style messages
@@ -468,6 +489,8 @@ def main():
     for sender, msg in erasure_msgs:
         add_line(sender, msg)
         line_num += 1
+        if sender in name_to_person_idx:
+            shared_people_records[name_to_person_idx[sender]].append({"source": "whatsapp_chat.txt", "record_key": f"line {line_num}"})
         ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {line_num}", "category": "name"})
 
     # A few more lines to pad to ~300
@@ -476,6 +499,8 @@ def main():
         msg = rng.choice(filler_msgs)
         add_line(sender, msg)
         line_num += 1
+        if sender in name_to_person_idx:
+            shared_people_records[name_to_person_idx[sender]].append({"source": "whatsapp_chat.txt", "record_key": f"line {line_num}"})
         ground_truth.append({"source": "whatsapp_chat.txt", "location": f"line {line_num}", "category": "name"})
 
     with open(chat_path, "w", encoding="utf-8") as f:
@@ -489,6 +514,20 @@ def main():
     with open(gt_path, "w", encoding="utf-8") as f:
         json.dump(ground_truth, f, indent=2, ensure_ascii=False)
     print(f"  Created {gt_path} ({len(ground_truth)} items)")
+
+    # -----------------------------------------------------------------------
+    # 7. people_truth.json
+    # -----------------------------------------------------------------------
+    people_truth = []
+    for i in range(12):
+        people_truth.append({
+            "person_id": i + 1,
+            "name": people[i]["name"],
+            "records": shared_people_records[i],
+        })
+    pt_path = os.path.join(out_dir, "people_truth.json")
+    with open(pt_path, "w", encoding="utf-8") as f:
+        json.dump(people_truth, f, indent=2, ensure_ascii=False)
 
     print(f"\nDone. {len(ground_truth)} ground truth items across 5 files.")
 

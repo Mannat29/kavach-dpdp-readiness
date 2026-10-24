@@ -1,36 +1,63 @@
+"""Database access module for Kavach."""
+import os
 import sqlite3
-import click
-from flask import current_app, g
+from typing import Optional
+
+DEFAULT_DB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "instance")
+DEFAULT_DB_PATH = os.path.join(DEFAULT_DB_DIR, "kavach.db")
 
 
-def get_db():
-    if "db" not in g:
-        g.db = sqlite3.connect(
-            current_app.config["DATABASE"],
-            detect_types=sqlite3.PARSE_DECLTYPES,
-        )
-        g.db.row_factory = sqlite3.Row
-    return g.db
+def get_db(db_path: Optional[str] = None) -> sqlite3.Connection:
+    """Get database connection. In Flask request context, reuses g.db."""
+    try:
+        from flask import g, has_app_context, current_app
+        if has_app_context():
+            if "db" not in g:
+                path = db_path or current_app.config.get("DATABASE") or os.environ.get("KAVACH_DATABASE", DEFAULT_DB_PATH)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                g.db = sqlite3.connect(path)
+                g.db.row_factory = sqlite3.Row
+                g.db.execute("PRAGMA foreign_keys = ON")
+            return g.db
+    except ImportError:
+        pass
 
-
-def close_db(e=None):
-    db = g.pop("db", None)
-    if db is not None:
-        db.close()
-
-
-def init_db():
-    db = get_db()
-    with current_app.open_resource("schema.sql") as f:
-        db.executescript(f.read().decode("utf-8"))
-
-
-@click.command("init-db")
-def init_db_command():
-    init_db()
-    click.echo("Initialized the database.")
+    path = db_path or os.environ.get("KAVACH_DATABASE", DEFAULT_DB_PATH)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    conn = sqlite3.connect(path)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
 
 
 def init_app(app):
+    """Register database functions with the Flask app."""
     app.teardown_appcontext(close_db)
-    app.cli.add_command(init_db_command)
+
+
+def close_db(e=None):
+    """Close connection attached to flask.g."""
+    try:
+        from flask import g
+        db = g.pop("db", None)
+        if db is not None:
+            db.close()
+    except (ImportError, RuntimeError):
+        pass
+
+
+def init_db(db_path: Optional[str] = None):
+    """Initialize database tables using schema.sql."""
+    schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "schema.sql")
+    with open(schema_path, encoding="utf-8") as f:
+        schema_sql = f.read()
+
+    conn = get_db(db_path)
+    conn.executescript(schema_sql)
+    conn.commit()
+    try:
+        from flask import has_app_context
+        if not has_app_context():
+            conn.close()
+    except (ImportError, RuntimeError):
+        conn.close()

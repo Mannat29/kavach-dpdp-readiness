@@ -1,4 +1,5 @@
 """PII detection module: pure functions, no I/O side effects."""
+from datetime import datetime
 import hashlib
 import re
 from typing import List, Dict, Optional
@@ -40,6 +41,20 @@ def mask_value(value: str, show_last: int = 4) -> str:
     if len(value) <= show_last:
         return "X" * len(value)
     return "X" * (len(value) - show_last) + value[-show_last:]
+
+
+def mask_name(name: str) -> str:
+    """Mask a name like 'R**** K***'."""
+    if not name:
+        return "****"
+    words = name.strip().split()
+    masked_words = []
+    for w in words:
+        if len(w) <= 1:
+            masked_words.append(w)
+        else:
+            masked_words.append(w[0].upper() + "*" * min(4, len(w) - 1))
+    return " ".join(masked_words)
 
 
 def hash_value(value: str) -> str:
@@ -206,6 +221,19 @@ def detect_upi(text: str, source: str, location: str, meta: dict) -> List[Dict]:
     return findings
 
 
+def _compute_is_minor(dob_str: str) -> bool:
+    """Compute whether age < 18 as of today without storing raw date."""
+    today = datetime.now().date()
+    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y", "%d/%m/%Y", "%m/%d/%Y", "%m-%d-%Y", "%d/%m/%y", "%d-%m-%y"):
+        try:
+            bdate = datetime.strptime(dob_str.strip(), fmt).date()
+            age = today.year - bdate.year - ((today.month, today.day) < (bdate.month, bdate.day))
+            return age < 18
+        except ValueError:
+            continue
+    return False
+
+
 def detect_dob(text: str, source: str, location: str, meta: dict) -> List[Dict]:
     """Detect dates of birth. Use header hints for tabular data."""
     header = meta.get("header", "").lower()
@@ -213,11 +241,16 @@ def detect_dob(text: str, source: str, location: str, meta: dict) -> List[Dict]:
     if header not in dob_headers:
         return []
     findings = []
+    dob_match = None
     m = _DOB_RE.search(text)
     if m:
-        findings.append(_make_finding(source, location, "dob", m.group(), 0.90))
+        dob_match = m.group()
     elif re.match(r"^\d{4}-\d{2}-\d{2}$", text.strip()):
-        findings.append(_make_finding(source, location, "dob", text.strip(), 0.90))
+        dob_match = text.strip()
+
+    if dob_match:
+        is_minor = _compute_is_minor(dob_match)
+        findings.append(_make_finding(source, location, "dob", dob_match, 0.90, meta={"is_minor": is_minor}))
     return findings
 
 
@@ -311,12 +344,16 @@ def scan_file(path: str) -> List[Dict]:
 # Internal helpers
 # ---------------------------------------------------------------------------
 def _make_finding(source: str, location: str, category: str, raw_value: str,
-                  confidence: float) -> Dict:
-    return {
+                  confidence: float, meta: Optional[dict] = None) -> Dict:
+    sample = mask_name(raw_value) if category == "name" else mask_value(raw_value)
+    res = {
         "source": source,
         "location": location,
         "category": category,
-        "masked_sample": mask_value(raw_value),
+        "masked_sample": sample,
         "value_hash": hash_value(raw_value),
         "confidence": confidence,
     }
+    if meta is not None:
+        res["meta"] = meta
+    return res
