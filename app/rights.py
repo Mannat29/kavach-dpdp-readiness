@@ -255,7 +255,7 @@ def process_intake(messages: List[Dict], conn) -> List[Dict]:
     Returns list of created request dicts.
     """
     created = []
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
 
     for msg in messages:
         sender = msg.get("sender", "").strip()

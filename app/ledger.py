@@ -17,7 +17,7 @@ def append_ledger(event: dict, conn) -> int:
     entry = {
         "event": event,
         "prev_hash": prev_hash,
-        "ts": datetime.datetime.utcnow().isoformat(),
+        "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
     entry_json = json.dumps(entry, sort_keys=True, ensure_ascii=False)
     entry_hash = hashlib.sha256(entry_json.encode("utf-8")).hexdigest()

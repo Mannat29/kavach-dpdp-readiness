@@ -257,7 +257,7 @@ def execute(request_id: int, confirm_hash: str, conn=None) -> Dict:
             scan_residuals[filename] = len(scan_findings)
 
     # Mark executed
-    executed_at = datetime.datetime.utcnow().isoformat()
+    executed_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
     cur.execute("""
         UPDATE rights_requests SET status = 'executed', executed_at = ?
         WHERE id = ?
@@ -582,6 +582,68 @@ def _residual_check(out_path: str, person_identifiers: dict, record_decisions: d
 def _is_expected_residual(category: str, retained_records: set, source_info: dict) -> bool:
     """Determine if a residual is expected (due to RETAIN decisions)."""
     return bool(retained_records)
+
+
+def plan_override(request_id: int, record_key: str, field: str, decision: str, conn=None) -> Dict:
+    """Override a single field decision in the erasure plan. Returns updated plan info."""
+    valid_decisions = {"ERASE", "MASK", "RETAIN", "REVIEW"}
+    if decision not in valid_decisions:
+        raise ValueError(f"Invalid decision '{decision}'. Must be one of {valid_decisions}")
+
+    if conn is None:
+        conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT plan_json, status FROM rights_requests WHERE id = ?", (request_id,))
+    row = cur.fetchone()
+    if not row:
+        raise ValueError(f"Request {request_id} not found")
+    if not row["plan_json"]:
+        raise ValueError("No plan exists for this request")
+    if row["status"] not in ("plan_ready", "approved"):
+        raise ValueError(f"Cannot override plan in status '{row['status']}'")
+
+    plan = json.loads(row["plan_json"])
+
+    # Find and update the field decision across all sources/records
+    updated = False
+    for _filename, source_info in plan.get("sources", {}).items():
+        for rk, record_plan in source_info.get("records", {}).items():
+            if rk == record_key and field in record_plan.get("fields", {}):
+                record_plan["fields"][field]["decision"] = decision
+                updated = True
+
+    if not updated:
+        raise ValueError(f"Field '{field}' not found in record '{record_key}'")
+
+    # Recompute counts
+    counts = {"ERASE": 0, "MASK": 0, "RETAIN": 0, "REVIEW": 0}
+    for _filename, source_info in plan.get("sources", {}).items():
+        for _rk, record_plan in source_info.get("records", {}).items():
+            for _fh, fd in record_plan.get("fields", {}).items():
+                d = fd["decision"]
+                counts[d] = counts.get(d, 0) + 1
+    plan["counts"] = counts
+
+    plan_json = json.dumps(plan, sort_keys=True)
+    plan_hash = hashlib.sha256(plan_json.encode("utf-8")).hexdigest()
+
+    cur.execute(
+        "UPDATE rights_requests SET plan_json = ?, plan_hash = ? WHERE id = ?",
+        (plan_json, plan_hash, request_id)
+    )
+    conn.commit()
+
+    append_ledger({
+        "event": "plan_override",
+        "request_id": request_id,
+        "record_key": record_key,
+        "field": field,
+        "decision": decision,
+        "new_plan_hash": plan_hash,
+    }, conn)
+
+    return {"plan_hash": plan_hash, "counts": counts}
 
 
 def _get_processors_note(conn) -> str:

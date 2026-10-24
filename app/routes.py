@@ -521,7 +521,10 @@ def api_rights_get(request_id: int):
     if row["due_at"]:
         try:
             due = datetime.datetime.fromisoformat(row["due_at"])
-            now = datetime.datetime.utcnow()
+            if due.tzinfo is not None:
+                now = datetime.datetime.now(datetime.timezone.utc)
+            else:
+                now = datetime.datetime.now()
             result["countdown_seconds"] = max(0, int((due - now).total_seconds()))
         except (ValueError, TypeError):
             result["countdown_seconds"] = None

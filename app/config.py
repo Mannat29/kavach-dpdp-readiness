@@ -6,6 +6,7 @@ ENABLED_PAGES = [
     "Dashboard",
     "Scanner",
     "Data Map",
+    "Rights Desk",
     "Risk Analysis",
 ]
 

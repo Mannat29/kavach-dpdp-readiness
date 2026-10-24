@@ -161,3 +161,119 @@ class TestRightsApproveEndpoint:
                          content_type="application/json")
         assert r2.status_code == 400
         assert "approved" in r2.get_json()["error"].lower()
+
+
+class TestRightsDeskPageView:
+    def test_rights_desk_page_renders(self, client):
+        r = client.get("/rights-desk")
+        assert r.status_code == 200
+        html = r.data.decode("utf-8")
+        assert "Rights Desk" in html
+        assert "intake-textarea" in html
+        assert "btn-load-demo" in html
+        assert "btn-detect" in html
+        assert "Not legal advice" in html
+        assert "rd-empty-state" in html
+
+    def test_rights_desk_in_nav(self, client):
+        r = client.get("/dashboard")
+        assert r.status_code == 200
+        assert "Rights Desk" in r.data.decode("utf-8")
+
+
+class TestRightsHinglishFullFlow:
+    def test_hinglish_requester_full_acceptance_flow(self, client):
+        # 1. Scan demo data
+        scan_r = client.post("/api/scan-demo")
+        assert scan_r.status_code == 200
+
+        # 2. Get demo text
+        demo_r = client.get("/api/rights/demo-text")
+        assert demo_r.status_code == 200
+        demo_text = demo_r.get_json()["text"]
+        assert "Ramesh Kumar" in demo_text
+
+        # 3. Detect requests via intake
+        intake_r = client.post(
+            "/api/rights/intake",
+            data=json.dumps({"text": demo_text}),
+            content_type="application/json"
+        )
+        assert intake_r.status_code == 200
+        created = intake_r.get_json()["requests"]
+        assert len(created) >= 1
+
+        # Find Ramesh Kumar request (Hinglish erase)
+        ramesh_req = next((req for req in created if req["intent"] == "erase" and req["resolution"] == "probable"), None)
+        assert ramesh_req is not None
+        req_id = ramesh_req["id"]
+        assert ramesh_req["status"] == "identity_pending"
+
+        # Check detail endpoint
+        detail_r = client.get(f"/api/rights/{req_id}")
+        assert detail_r.status_code == 200
+        detail = detail_r.get_json()
+        assert detail["countdown_seconds"] is not None
+        assert len(detail["data_locations"]) > 0
+
+        # 4. Confirm identity
+        confirm_r = client.post(
+            f"/api/rights/{req_id}/confirm-identity",
+            data=json.dumps({"detail": "phone on file"}),
+            content_type="application/json"
+        )
+        assert confirm_r.status_code == 200
+        assert confirm_r.get_json()["status"] == "received"
+
+        # 5. Build plan
+        plan_r = client.post(f"/api/rights/requests/{req_id}/plan")
+        assert plan_r.status_code == 200
+        plan_data = plan_r.get_json()
+        assert plan_data["success"] is True
+        plan_hash = plan_data["plan_hash"]
+
+        # Test plan override
+        # Override billing.csv patient name or phone
+        plan = plan_data["plan"]
+        billing_records = plan["sources"].get("billing.csv", {}).get("records", {})
+        if billing_records:
+            first_rk = list(billing_records.keys())[0]
+            first_field = list(billing_records[first_rk]["fields"].keys())[0]
+            override_r = client.post(
+                f"/api/rights/{req_id}/plan-override",
+                data=json.dumps({
+                    "record_key": first_rk,
+                    "field": first_field,
+                    "decision": "ERASE"
+                }),
+                content_type="application/json"
+            )
+            assert override_r.status_code == 200
+            plan_hash = override_r.get_json()["plan_hash"]
+
+        # 6. Approve plan
+        app_r = client.post(f"/api/rights/requests/{req_id}/approve")
+        assert app_r.status_code == 200
+        assert app_r.get_json()["status"] == "approved"
+
+        # 7. Execute erasure
+        exec_r = client.post(
+            f"/api/rights/requests/{req_id}/execute",
+            data=json.dumps({"confirm_hash": plan_hash}),
+            content_type="application/json"
+        )
+        assert exec_r.status_code == 200
+        receipt = exec_r.get_json()["receipt"]
+        assert receipt["request_id"] == req_id
+        assert "action_counts" in receipt
+        assert "retained_items" in receipt
+        assert "residual_report" in receipt
+
+        # 8. Receipt & Download
+        receipt_r = client.get(f"/api/rights/{req_id}/receipt")
+        assert receipt_r.status_code == 200
+
+        download_r = client.get(f"/api/rights/{req_id}/download")
+        assert download_r.status_code == 200
+        assert download_r.mimetype == "application/zip"
+

@@ -1,23 +1,212 @@
 {% extends "base.html" %}
 {% block title %}Rights Desk – Kavach{% endblock %}
 
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rights_desk.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="page-container stub-page">
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">Rights Desk</h1>
-            <p class="page-subtitle">Informal request catcher, SAR fulfillment, and consent &amp; erasure workflows.</p>
-        </div>
+<div class="page-container rights-desk-page" id="rights-desk-root">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Rights Desk</h1>
+      <p class="page-subtitle">Informal request catcher, identity verification, and erasure engine.</p>
+    </div>
+  </div>
+
+  <!-- Legal notice banner -->
+  <div class="rd-legal-banner" role="note">
+    <span class="rd-legal-icon" aria-hidden="true">⚠️</span>
+    <strong>Not legal advice.</strong> This tool produces draft outputs for human review. Verify all citations before acting. Backups and copies held by processors are outside this tool.
+  </div>
+
+  <!-- Live status region for screen readers -->
+  <div id="rd-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ======================================================
+       INTAKE PANEL
+  ====================================================== -->
+  <section class="rd-card" aria-labelledby="intake-heading">
+    <h2 id="intake-heading" class="rd-card-title">
+      <span aria-hidden="true">📥</span> Intake — Paste WhatsApp Chat
+    </h2>
+
+    <div class="rd-intake-body">
+      <label for="intake-textarea" class="rd-label">
+        WhatsApp export text <span class="rd-label-hint">(one message per line, e.g. <code>01/05/26, 9:05 am - Name: message</code>)</span>
+      </label>
+      <textarea
+        id="intake-textarea"
+        class="rd-textarea"
+        rows="6"
+        placeholder="Paste your WhatsApp chat export here…"
+        aria-describedby="intake-hint"
+      ></textarea>
+      <p id="intake-hint" class="rd-hint">Messages are parsed locally. Identifiers are masked before storage.</p>
+
+      <div class="rd-intake-actions">
+        <button type="button" id="btn-load-demo" class="btn btn-secondary">
+          Load demo requests
+        </button>
+        <button type="button" id="btn-detect" class="btn btn-primary">
+          Detect requests
+        </button>
+      </div>
     </div>
 
-    <section class="card stub-card" aria-label="Feature coming soon">
-        <div class="stub-icon" aria-hidden="true">&#x1F4DD;</div>
-        <div class="badge badge-info mb-2">Coming Soon</div>
-        <h2 class="stub-title">Rights Desk is Coming Soon</h2>
-        <p class="stub-text">The Rights Desk will provide an automated catcher for informal data principal requests across WhatsApp and email, alongside an erasure engine with post-deletion residual scanning.</p>
-        <div class="stub-actions">
-            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
-        </div>
-    </section>
+    <!-- Inline error for intake -->
+    <div id="intake-error" class="rd-inline-error" role="alert" aria-live="assertive" hidden></div>
+  </section>
+
+  <!-- ======================================================
+       REQUEST LIST
+  ====================================================== -->
+  <section aria-labelledby="requests-heading" id="requests-section">
+    <h2 id="requests-heading" class="rd-section-title">
+      Detected Requests
+      <span id="requests-count" class="rd-count-badge" aria-label="request count"></span>
+    </h2>
+
+    <!-- Empty state -->
+    <div id="rd-empty-state" class="rd-empty-state">
+      <p class="rd-empty-text">No requests scanned yet.</p>
+      <p class="rd-empty-hint">Paste WhatsApp text above and click <strong>Detect requests</strong>, or load the demo data first.</p>
+      <button type="button" id="btn-scan-demo-rights" class="btn btn-secondary">
+        Scan demo data &amp; load demo requests
+      </button>
+    </div>
+
+    <!-- Cards rendered by JS -->
+    <div id="rd-request-list" class="rd-request-list" aria-live="polite" aria-label="Rights request list"></div>
+
+    <!-- Ignored messages accordion -->
+    <div id="rd-ignored-section" hidden>
+      <button
+        type="button"
+        id="btn-toggle-ignored"
+        class="rd-ignored-toggle"
+        aria-expanded="false"
+        aria-controls="rd-ignored-list"
+      >
+        <span id="rd-ignored-label">Ignored messages (0)</span>
+        <span class="rd-toggle-icon" aria-hidden="true">▸</span>
+      </button>
+      <ul id="rd-ignored-list" class="rd-ignored-list" hidden></ul>
+    </div>
+  </section>
 </div>
+
+<!-- ======================================================
+     REQUEST CARD TEMPLATE (cloned by JS)
+====================================================== -->
+<template id="tpl-request-card">
+  <article class="rd-req-card" aria-labelledby="">
+    <div class="rd-req-header">
+      <div class="rd-req-badges">
+        <span class="rd-intent-badge" data-intent=""></span>
+        <span class="rd-confidence"></span>
+      </div>
+      <span class="rd-status-badge" data-status=""></span>
+    </div>
+
+    <p class="rd-reason"></p>
+    <blockquote class="rd-excerpt"></blockquote>
+
+    <div class="rd-person-row">
+      <span class="rd-person-label"></span>
+      <span class="rd-resolution-badge" data-resolution=""></span>
+      <span class="rd-deadline"></span>
+    </div>
+
+    <!-- Data locations table -->
+    <details class="rd-data-locations" hidden>
+      <summary class="rd-summary">Where this person's data lives</summary>
+      <table class="rd-table rd-locations-table">
+        <thead>
+          <tr><th scope="col">Source</th><th scope="col">Type</th><th scope="col">Records</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </details>
+
+    <!-- Non-erase next-step panel -->
+    <div class="rd-next-step" hidden>
+      <p class="rd-next-step-text"></p>
+      <button type="button" class="btn btn-sm btn-secondary rd-close-btn">Close / Mark handled</button>
+    </div>
+
+    <!-- Erase stepper -->
+    <div class="rd-stepper" hidden>
+      <!-- Step 1: Verify identity -->
+      <div class="rd-step" data-step="1">
+        <div class="rd-step-header">
+          <span class="rd-step-num" aria-hidden="true">1</span>
+          <h3 class="rd-step-title">Verify Identity</h3>
+        </div>
+        <div class="rd-step-body">
+          <label class="rd-checkbox-label">
+            <input type="checkbox" class="rd-chk-identity">
+            I matched this person using a detail on file (phone suffix, email, or document number)
+          </label>
+          <div class="rd-step-actions">
+            <button type="button" class="btn btn-sm btn-primary rd-btn-confirm-identity" disabled>
+              Confirm identity &amp; build plan
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Review plan -->
+      <div class="rd-step" data-step="2" hidden>
+        <div class="rd-step-header">
+          <span class="rd-step-num" aria-hidden="true">2</span>
+          <h3 class="rd-step-title">Review Plan</h3>
+        </div>
+        <div class="rd-step-body">
+          <div class="rd-plan-body"></div>
+          <div class="rd-step-actions">
+            <button type="button" class="btn btn-sm btn-primary rd-btn-approve">
+              Approve plan
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Approve &amp; Run -->
+      <div class="rd-step" data-step="3" hidden>
+        <div class="rd-step-header">
+          <span class="rd-step-num" aria-hidden="true">3</span>
+          <h3 class="rd-step-title">Approve &amp; Run</h3>
+        </div>
+        <div class="rd-step-body">
+          <p class="rd-plan-hash-display"></p>
+          <div class="rd-confirm-dialog" role="region" aria-label="Execute confirmation">
+            <p class="rd-confirm-counts"></p>
+            <div class="rd-step-actions">
+              <button type="button" class="btn btn-sm btn-danger rd-btn-execute">
+                Execute erasure
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Result -->
+      <div class="rd-step" data-step="4" hidden>
+        <div class="rd-step-header">
+          <span class="rd-step-num" aria-hidden="true">4</span>
+          <h3 class="rd-step-title">Result</h3>
+        </div>
+        <div class="rd-step-body">
+          <div class="rd-result-body"></div>
+        </div>
+      </div>
+    </div><!-- /rd-stepper -->
+  </article>
+</template>
+
+{% endblock %}
+
+{% block scripts_extra %}
+<script src="{{ url_for('static', filename='js/rights_desk.js') }}"></script>
 {% endblock %}
