@@ -1,0 +1,782 @@
+/**
+ * Breach Simulator Styles – Kavach DPDP Readiness
+ */
+
+/* ==========================================================================
+   Banners
+   ========================================================================== */
+
+.simulation-banner {
+    background: #fef2f2;
+    border: 2px solid #ef4444;
+    color: #991b1b;
+    padding: 0.85rem 1.25rem;
+    border-radius: var(--radius-md, 6px);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.15);
+}
+
+.simulation-banner .simulation-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.bs-legal-banner {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    padding: 0.65rem 1rem;
+    border-radius: var(--radius-md, 6px);
+    font-size: 0.825rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card-error-banner {
+    background: #fef2f2;
+    border: 1px solid #f87171;
+    color: #b91c1c;
+    padding: 0.85rem 1.25rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: var(--radius-md, 6px);
+}
+
+/* ==========================================================================
+   Controls & Form
+   ========================================================================== */
+
+.controls-card {
+    margin-bottom: 1.75rem;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-main, #1e293b);
+    margin-bottom: 0.5rem;
+}
+
+.form-section {
+    margin-bottom: 1.25rem;
+}
+
+.form-section-label {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--text-main, #1e293b);
+    margin-bottom: 0.75rem;
+}
+
+/* Scenario Cards Radio Grid */
+.scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+}
+
+.scenario-card-label {
+    display: block;
+    position: relative;
+    cursor: pointer;
+    border: 2px solid var(--border-color, #e2e8f0);
+    border-radius: var(--radius-md, 8px);
+    padding: 1rem;
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.scenario-card-label:hover {
+    border-color: #93c5fd;
+    background: #f8fafc;
+}
+
+.scenario-card-label.selected {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 0 0 1px #2563eb;
+}
+
+.scenario-card-label:focus-within {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.scenario-radio-input {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    accent-color: #2563eb;
+    width: 1.1rem;
+    height: 1.1rem;
+    cursor: pointer;
+}
+
+.scenario-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-right: 1.5rem;
+    margin-bottom: 0.35rem;
+    display: block;
+}
+
+.scenario-card-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.4;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.scenario-card-sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.scenario-source-tag {
+    font-family: monospace;
+    font-size: 0.7rem;
+    background: #e2e8f0;
+    color: #334155;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+}
+
+/* Custom Sources Box */
+.custom-sources-panel {
+    background: #f1f5f9;
+    border: 1px dashed #94a3b8;
+    border-radius: var(--radius-md, 6px);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.custom-sources-legend {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+    padding: 0 0.5rem;
+}
+
+.custom-sources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.65rem;
+    margin-top: 0.5rem;
+}
+
+.custom-source-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.custom-source-item:focus-within {
+    outline: 2px solid #2563eb;
+}
+
+.custom-source-checkbox {
+    accent-color: #2563eb;
+    cursor: pointer;
+}
+
+/* Form Row Params */
+.form-row-params {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 680px) {
+    .form-row-params {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.form-label {
+    font-size: 0.875rem;
+    color: #1e293b;
+}
+
+.form-input, .form-select {
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: var(--radius-sm, 4px);
+    font-size: 0.9rem;
+    color: var(--text-main, #1e293b);
+    background: #ffffff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus, .form-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    outline: none;
+}
+
+.form-hint {
+    font-size: 0.75rem;
+    line-height: 1.35;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-start;
+    padding-top: 0.5rem;
+}
+
+/* ==========================================================================
+   Results Top Grid: Impact Summary + Clocks
+   ========================================================================== */
+
+.results-top-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.75rem;
+}
+
+@media (max-width: 960px) {
+    .results-top-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+/* Severity Badges */
+.badge-severity {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 0.825rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.badge-critical {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #f87171;
+}
+
+.badge-high {
+    background-color: #ffedd5;
+    color: #9a3412;
+    border: 1px solid #fb923c;
+}
+
+.badge-medium {
+    background-color: #fef9c3;
+    color: #854d0e;
+    border: 1px solid #facc15;
+}
+
+.badge-low {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.severity-disclaimer-line {
+    font-size: 0.825rem;
+    color: #64748b;
+    margin-bottom: 1rem;
+}
+
+/* Big Numbers Row */
+.big-numbers-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.stat-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md, 6px);
+    padding: 0.85rem 1rem;
+    text-align: left;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+    margin-bottom: 0.2rem;
+}
+
+.stat-subtext {
+    display: block;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+/* Factors List */
+.factors-section {
+    margin-bottom: 1.25rem;
+}
+
+.factors-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 0.4rem;
+}
+
+.factors-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.factors-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.825rem;
+    line-height: 1.4;
+    color: #334155;
+}
+
+.factor-pts {
+    font-family: monospace;
+    font-weight: 700;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.factor-pts-pos {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.factor-pts-neg {
+    background: #dcfce7;
+    color: #166534;
+}
+
+/* Category Table */
+.category-table-section {
+    margin-top: 1rem;
+}
+
+.category-table-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 0.4rem;
+}
+
+/* ==========================================================================
+   Statutory Clocks
+   ========================================================================== */
+
+.clocks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.clock-card {
+    border: 2px solid #e2e8f0;
+    border-radius: var(--radius-md, 8px);
+    padding: 1.1rem;
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.clock-card-normal {
+    border-color: #38bdf8;
+    background: #f0f9ff;
+}
+
+.clock-card-urgent {
+    border-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.clock-card-critical {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+.clock-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.clock-stage-num {
+    font-size: 0.725rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+}
+
+.clock-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.clock-timer-display {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+    margin-bottom: 0.25rem;
+}
+
+.clock-status-label {
+    font-size: 0.825rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.clock-desc {
+    font-size: 0.775rem;
+    line-height: 1.35;
+    margin: 0;
+}
+
+.clock-footer {
+    margin-top: 0.85rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* ==========================================================================
+   Cytoscape Blast-Radius Graph
+   ========================================================================== */
+
+.graph-card {
+    margin-bottom: 1.75rem;
+}
+
+.graph-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.graph-legend-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 0.85rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 0.775rem;
+    color: #475569;
+    margin-bottom: 0.75rem;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.legend-box {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.legend-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-source-affected {
+    background: #b91c1c;
+    border: 1px solid #ef4444;
+}
+
+.legend-source-unaffected {
+    background: #94a3b8;
+    border: 1px solid #cbd5e1;
+}
+
+.legend-cat-high {
+    background: #ea580c;
+    border: 1px solid #f97316;
+}
+
+.legend-cat-std {
+    background: #0284c7;
+    border: 1px solid #38bdf8;
+}
+
+.legend-people-confirmed {
+    background: #059669;
+    border: 1px solid #10b981;
+}
+
+.legend-people-possible {
+    background: #7c3aed;
+    border: 1px dashed #a855f7;
+}
+
+.cy-breach-container {
+    width: 100%;
+    height: 480px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius-md, 6px);
+}
+
+/* ==========================================================================
+   First-Hour Checklist
+   ========================================================================== */
+
+.checklist-card {
+    margin-bottom: 1.75rem;
+}
+
+.checklist-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.checklist-progress-badge {
+    font-size: 0.825rem;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #334155;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+}
+
+.checklist-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.checklist-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.65rem 0.85rem;
+    transition: background 0.15s ease;
+}
+
+.checklist-item.checked {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.checklist-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: #1e293b;
+    margin: 0;
+}
+
+.checklist-checkbox {
+    margin-top: 0.2rem;
+    accent-color: #059669;
+    width: 1.15rem;
+    height: 1.15rem;
+    cursor: pointer;
+}
+
+.checklist-item.checked .checklist-text {
+    text-decoration: line-through;
+    color: #64748b;
+}
+
+/* ==========================================================================
+   Drafts & Recipients Tabs
+   ========================================================================== */
+
+.drafts-card {
+    margin-bottom: 2rem;
+}
+
+.drafts-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.tabs-nav {
+    display: flex;
+    border-bottom: 2px solid #e2e8f0;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 0.65rem 1.1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+    color: #1e293b;
+    background: #f1f5f9;
+}
+
+.tab-btn.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    font-weight: 700;
+    background: #eff6ff;
+}
+
+.tab-btn:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: -2px;
+}
+
+.panel-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.panel-hint {
+    font-size: 0.8rem;
+}
+
+.placeholder-sample {
+    background-color: #fef08a;
+    color: #854d0e;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.placeholder-mark {
+    background-color: #fef08a;
+    color: #854d0e;
+    border: 1px solid #eab308;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-weight: 700;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.draft-viewer {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 1.25rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #1e293b;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 520px;
+    overflow-y: auto;
+}
+
+/* Who to Notify */
+.recipients-section {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1.25rem;
+}
+
+.recipients-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.4rem;
+}
+
+.recipients-note {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    padding: 0.65rem 0.9rem;
+    border-radius: 4px;
+    font-size: 0.825rem;
+}

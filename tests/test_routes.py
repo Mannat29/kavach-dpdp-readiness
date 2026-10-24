@@ -162,3 +162,44 @@ def test_questionnaire_three_state_and_risk_text(app_client):
     assert b_no["title"] == "No breach contact/process"
 
 
+def test_breach_simulator_page_renders_and_enabled_in_nav(app_client):
+    """Test GET /breach-simulator renders with required controls, banners, accessibility, and nav entry."""
+    res = app_client.get("/breach-simulator")
+    assert res.status_code == 200
+    html_text = res.get_data(as_text=True)
+
+    # 1. Banners
+    assert "SIMULATION: nothing here is a real incident, and nothing is sent." in html_text
+    assert "Not legal advice" in html_text
+
+    # 2. Controls & Labels
+    assert "When did you become aware?" in html_text
+    assert "Was the device protected (password/encryption)?" in html_text
+    assert "Run simulation" in html_text
+    assert "Scan demo data" in html_text
+
+    # 3. Sections & IDs
+    assert 'id="scenario-cards-container"' in html_text
+    assert 'id="custom-sources-box"' in html_text
+    assert 'id="simulation-results"' in html_text
+    assert 'id="cy-breach"' in html_text
+    assert 'id="clock-card-stage1"' in html_text
+    assert 'id="clock-card-stage2"' in html_text
+    assert 'id="checklist-items"' in html_text
+    assert 'id="draft-text-container"' in html_text
+    assert 'id="recipients-table"' in html_text
+
+    # 4. Severity note
+    assert "Severity is Kavach&#039;s own estimate, not a legal threshold" in html_text or "Severity is Kavach's own estimate, not a legal threshold" in html_text
+
+    # 5. Nav bar includes Breach Simulator (from ENABLED_PAGES)
+    assert "Breach Simulator" in html_text
+    assert 'href="/breach-simulator"' in html_text
+
+    # 6. Scripts & Stylesheets
+    assert "breach_simulator.js" in html_text
+    assert "breach_simulator.css" in html_text
+    assert "cytoscape" in html_text
+
+
+

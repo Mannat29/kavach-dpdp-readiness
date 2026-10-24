@@ -1,23 +1,327 @@
 {% extends "base.html" %}
 {% block title %}Breach Simulator – Kavach{% endblock %}
 
+{% block head_extra %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/breach_simulator.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="page-container stub-page">
+<div class="page-container breach-simulator-page">
     <div class="page-header">
         <div>
-            <h1 class="page-title">Breach Simulator</h1>
-            <p class="page-subtitle">Incident blast-radius simulator and DPDP Section 8(6) two-stage notification clocks.</p>
+            <h1 class="page-title">Breach Blast-Radius Simulator</h1>
+            <p class="page-subtitle">Simulate compromise scenarios across connected data stores, compute impacted people, track statutory clocks, and generate regulatory intimations.</p>
         </div>
     </div>
 
-    <section class="card stub-card" aria-label="Feature coming soon">
-        <div class="stub-icon" aria-hidden="true">&#x26A1;</div>
-        <div class="badge badge-info mb-2">Coming Soon</div>
-        <h2 class="stub-title">Breach Simulator is Coming Soon</h2>
-        <p class="stub-text">Simulate potential compromise scenarios across connected data sources, compute principal impact counts, track two-stage regulatory notification deadlines, and generate draft intimations for the Data Protection Board.</p>
-        <div class="stub-actions">
-            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
-        </div>
+    <!-- Permanent SIMULATION banner -->
+    <div class="simulation-banner" role="alert" aria-label="Simulation Notice">
+        <span class="simulation-icon" aria-hidden="true">&#x26A0;</span>
+        <strong>SIMULATION: nothing here is a real incident, and nothing is sent.</strong>
+    </div>
+
+    <!-- Legal disclaimer banner -->
+    <div class="bs-legal-banner" role="note" aria-label="Legal Notice">
+        <span class="bs-legal-icon" aria-hidden="true">&#x26A0;</span>
+        <span><strong>Not legal advice.</strong> Readiness aid, not legal advice. Citations pending verification. All drafts must be reviewed by qualified legal and security counsel.</span>
+    </div>
+
+    <!-- Error message region -->
+    <div id="sim-error-alert" class="card card-error-banner" role="alert" aria-live="assertive" style="display: none;">
+        <span id="sim-error-text"></span>
+        <button type="button" class="btn-dismiss" id="btn-dismiss-sim-error" aria-label="Dismiss error">&times;</button>
+    </div>
+
+    <!-- Empty State -->
+    <section id="sim-empty-state" class="card empty-state-card" style="display: none;" aria-label="Empty State">
+        <div class="empty-state-icon" aria-hidden="true">&#x1F6E1;</div>
+        <h2 class="empty-state-title">No Data Sources Scanned</h2>
+        <p class="empty-state-text">Blast-radius simulations require ingested source records to calculate principal counts and generate drafts. Scan the demo dataset to begin.</p>
+        <button id="btn-sim-empty-scan" class="btn btn-primary" type="button">
+            <span class="btn-icon" aria-hidden="true">&#x25B6;</span>
+            <span class="btn-text">Scan demo data</span>
+        </button>
     </section>
+
+    <!-- Main Simulator Form / Controls -->
+    <div id="sim-main-container">
+        <section class="card controls-card" aria-labelledby="controls-heading">
+            <h2 id="controls-heading" class="section-title">Incident Simulation Controls</h2>
+            
+            <form id="breach-form" novalidate>
+                <!-- 1. Scenario cards radio group -->
+                <div class="form-section">
+                    <label class="form-section-label" id="scenario-group-label"><strong>1. Select Breach Scenario:</strong></label>
+                    <div class="scenario-grid" role="radiogroup" aria-labelledby="scenario-group-label" id="scenario-cards-container">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Custom scenario sources box -->
+                <div id="custom-sources-box" class="custom-sources-panel" style="display: none;" aria-live="polite">
+                    <fieldset class="custom-sources-fieldset">
+                        <legend class="custom-sources-legend">Select Compromised Sources for Custom Scenario</legend>
+                        <p class="custom-sources-hint text-muted">Choose which scanned source files are involved in this simulation:</p>
+                        <div id="custom-sources-list" class="custom-sources-grid">
+                            <!-- Populated with scanned source checkboxes -->
+                        </div>
+                    </fieldset>
+                </div>
+
+                <!-- 2. Parameters (Awareness time + Device protection) -->
+                <div class="form-row-params">
+                    <div class="form-group">
+                        <label for="input-aware-at" class="form-label">
+                            <strong>When did you become aware?</strong>
+                        </label>
+                        <input type="datetime-local" id="input-aware-at" class="form-input" required aria-describedby="aware-at-hint">
+                        <span id="aware-at-hint" class="form-hint text-muted">Incident clocks (Section 8(6) without delay and 72-hour detailed report) run from this moment.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="select-device-protected" class="form-label">
+                            <strong>Was the device protected (password/encryption)?</strong>
+                        </label>
+                        <select id="select-device-protected" class="form-select" aria-describedby="device-protected-hint">
+                            <option value="yes">yes</option>
+                            <option value="no">no</option>
+                            <option value="unknown" selected>don't know</option>
+                        </select>
+                        <span id="device-protected-hint" class="form-hint text-muted">Impacts severity scoring (-10 points for protected, +15 for unprotected, +10 for unknown).</span>
+                    </div>
+                </div>
+
+                <!-- Run Simulation Button -->
+                <div class="form-actions">
+                    <button type="submit" id="btn-run-simulation" class="btn btn-primary btn-lg">
+                        <span class="btn-icon" aria-hidden="true">&#x25B6;</span>
+                        <span class="btn-text">Run simulation</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Simulation Results Section (hidden until simulation run) -->
+        <div id="simulation-results" style="display: none;" aria-live="polite">
+            <!-- 2. Impact Summary & Clocks Grid -->
+            <div class="results-top-grid">
+                <!-- Impact Summary -->
+                <section class="card impact-summary-card" aria-labelledby="impact-heading">
+                    <div class="card-header-flex">
+                        <h2 id="impact-heading" class="section-title">Impact Summary</h2>
+                        <div id="severity-badge-container">
+                            <!-- Severity Badge -->
+                        </div>
+                    </div>
+
+                    <p class="severity-disclaimer-line">
+                        <em>Severity is Kavach's own estimate, not a legal threshold</em>
+                    </p>
+
+                    <!-- Big Numbers -->
+                    <div class="big-numbers-row">
+                        <div class="stat-card">
+                            <span class="stat-label">People Affected</span>
+                            <div class="stat-value" id="stat-people-affected">0 confirmed + 0 possible</div>
+                            <span class="stat-subtext" id="stat-people-subtext">Estimated unique principals</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Records Affected</span>
+                            <div class="stat-value" id="stat-records-affected">0</div>
+                            <span class="stat-subtext" id="stat-records-subtext">Total data entries exposed</span>
+                        </div>
+                    </div>
+
+                    <!-- Severity Factors List -->
+                    <div class="factors-section">
+                        <h3 class="factors-title">Explainable Severity Scoring:</h3>
+                        <ul id="severity-factors-list" class="factors-list">
+                            <!-- Populated with points and reasons -->
+                        </ul>
+                    </div>
+
+                    <!-- Per-Category Table -->
+                    <div class="category-table-section">
+                        <h3 class="category-table-title">Personal Data Categories Involved:</h3>
+                        <div class="table-responsive">
+                            <table class="data-table" id="categories-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Category</th>
+                                        <th scope="col">Distinct People</th>
+                                        <th scope="col">Records</th>
+                                        <th scope="col">High-Impact Priority</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categories-table-body">
+                                    <!-- Populated rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. Statutory Clocks -->
+                <section class="card clocks-section-card" aria-labelledby="clocks-heading">
+                    <div class="card-header-flex">
+                        <h2 id="clocks-heading" class="section-title">DPDP Statutory Incident Clocks</h2>
+                        <span class="badge badge-info">Live Ticker</span>
+                    </div>
+                    <p class="text-muted text-sm mb-3">Statutory response timelines calculated from awareness time.</p>
+
+                    <div class="clocks-container">
+                        <!-- Stage 1 Clock Card -->
+                        <div class="clock-card" id="clock-card-stage1">
+                            <div class="clock-header">
+                                <span class="clock-stage-num" aria-hidden="true">Stage 1</span>
+                                <h3 class="clock-title">Inform the Board without delay</h3>
+                            </div>
+                            <div class="clock-body">
+                                <div class="clock-timer-display" id="clock-stage1-timer" aria-live="off">--</div>
+                                <div class="clock-status-label" id="clock-stage1-status">Section 8(6) Intimation requirement</div>
+                                <p class="clock-desc text-muted">No fixed hours limit. Data fiduciary must inform the Data Protection Board of India immediately upon becoming aware.</p>
+                            </div>
+                            <div class="clock-footer">
+                                <button type="button" class="btn-verify-chip" data-citation="DPDP Act Section 8(6) & DPDP Rules 2025, Rule 7 (Timings pending verification against the DPDP Rules)" aria-label="Verify timing requirement">
+                                    <span aria-hidden="true">&#x26A0;</span> Verify
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Stage 2 Clock Card -->
+                        <div class="clock-card" id="clock-card-stage2">
+                            <div class="clock-header">
+                                <span class="clock-stage-num" aria-hidden="true">Stage 2</span>
+                                <h3 class="clock-title">Detailed report within 72 hours</h3>
+                            </div>
+                            <div class="clock-body">
+                                <div class="clock-timer-display" id="clock-stage2-timer" aria-live="off">--</div>
+                                <div class="clock-status-label" id="clock-stage2-status">Calculating remaining time...</div>
+                                <p class="clock-desc text-muted">Comprehensive technical incident report to the Board within 72 hours (extendable on written request).</p>
+                            </div>
+                            <div class="clock-footer">
+                                <button type="button" class="btn-verify-chip" data-citation="DPDP Rules 2025, Rule 7 (Timings pending verification against the DPDP Rules)" aria-label="Verify timing requirement">
+                                    <span aria-hidden="true">&#x26A0;</span> Verify
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 3. Blast-Radius Cytoscape Graph -->
+            <section class="card graph-card" aria-labelledby="graph-heading">
+                <div class="graph-header-flex">
+                    <div>
+                        <h2 id="graph-heading" class="section-title">Blast-Radius Topology Graph</h2>
+                        <p class="text-muted text-sm">Visual relationship between affected/unaffected sources, data categories, and impacted principal clusters.</p>
+                    </div>
+                    <div class="graph-actions">
+                        <button type="button" id="btn-fit-graph" class="btn btn-secondary btn-sm" title="Reset and fit view">Fit View</button>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="graph-legend-bar" role="region" aria-label="Graph Legend">
+                    <span class="legend-item"><span class="legend-box legend-source-affected"></span> Affected Source (Compromised)</span>
+                    <span class="legend-item"><span class="legend-box legend-source-unaffected"></span> Unaffected Source (Greyed)</span>
+                    <span class="legend-item"><span class="legend-circle legend-cat-high"></span> High-Impact Category (Sized by people)</span>
+                    <span class="legend-item"><span class="legend-circle legend-cat-std"></span> Standard Category</span>
+                    <span class="legend-item"><span class="legend-box legend-people-confirmed"></span> Confirmed People</span>
+                    <span class="legend-item"><span class="legend-box legend-people-possible"></span> Possible People</span>
+                </div>
+
+                <!-- Cytoscape Container -->
+                <div id="cy-breach" class="cy-breach-container" role="img" aria-label="Blast radius topology graph showing data sources, categories, and principal impact"></div>
+            </section>
+
+            <!-- 6. First-Hour Checklist -->
+            <section class="card checklist-card" aria-labelledby="checklist-heading">
+                <div class="checklist-header-flex">
+                    <div>
+                        <h2 id="checklist-heading" class="section-title">First-Hour Incident Containment Checklist</h2>
+                        <p class="text-muted text-sm">Immediate containment and statutory compliance actions specific to this scenario. Check off items as completed.</p>
+                    </div>
+                    <div class="checklist-progress-badge" id="checklist-progress" role="status" aria-live="polite">
+                        0 of 0 completed
+                    </div>
+                </div>
+                <ul id="checklist-items" class="checklist-list">
+                    <!-- Populated dynamically -->
+                </ul>
+            </section>
+
+            <!-- 5. Drafts & Recipients Tabs -->
+            <section class="card drafts-card" aria-labelledby="drafts-heading">
+                <div class="drafts-header-flex">
+                    <div>
+                        <h2 id="drafts-heading" class="section-title">Statutory Incident Drafts & Recipient List</h2>
+                        <p class="text-muted text-sm">Pre-formatted DPDP Section 8(6) intimations with highlighted placeholders requiring fiduciary input.</p>
+                    </div>
+                    <div class="drafts-actions">
+                        <a id="btn-download-all" href="#" target="_blank" class="btn btn-secondary" title="Export complete simulation packet as HTML">
+                            &#x1F4E5; Download all
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Drafts Tabs -->
+                <div class="tabs-nav" role="tablist" aria-label="Draft Documents">
+                    <button type="button" class="tab-btn active" role="tab" id="tab-board-intimation" aria-selected="true" aria-controls="panel-draft-content" data-tab="board_intimation">
+                        Board Intimation (Stage 1)
+                    </button>
+                    <button type="button" class="tab-btn" role="tab" id="tab-detailed-report" aria-selected="false" aria-controls="panel-draft-content" data-tab="board_detailed_report">
+                        Detailed Report (72h Stage 2)
+                    </button>
+                    <button type="button" class="tab-btn" role="tab" id="tab-individual-notice" aria-selected="false" aria-controls="panel-draft-content" data-tab="individual_notice">
+                        Notice to Individuals
+                    </button>
+                </div>
+
+                <!-- Tab Panels -->
+                <div class="tab-panels">
+                    <div class="tab-panel active" id="panel-draft-content" role="tabpanel" tabindex="0">
+                        <div class="panel-toolbar">
+                            <span class="panel-hint text-muted"><mark class="placeholder-sample">[PLACEHOLDER]</mark> tokens are highlighted for customization before submission.</span>
+                            <button type="button" id="btn-copy-draft" class="btn btn-sm btn-secondary" title="Copy draft text to clipboard">
+                                &#x1F4CB; Copy draft text
+                            </button>
+                        </div>
+                        <div id="draft-text-container" class="draft-viewer" role="region" aria-label="Draft Content">
+                            <!-- Populated with draft text and highlighted placeholders -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Who to Notify Table -->
+                <div class="recipients-section mt-4">
+                    <h3 class="recipients-title">Who to Notify (Data Principals in Blast Radius)</h3>
+                    <div class="recipients-note" role="note">
+                        <strong>Kavach cannot send messages.</strong> Notices must be delivered manually through your existing communications channels (SMS, email, or in-person delivery).
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="data-table" id="recipients-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Data Principal</th>
+                                    <th scope="col">Impact Link Status</th>
+                                    <th scope="col">Phone Available</th>
+                                    <th scope="col">Email Available</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recipients-table-body">
+                                <tr><td colspan="4" class="text-center text-muted">Loading recipients list...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script src="{{ url_for('static', filename='js/breach_simulator.js') }}"></script>
 {% endblock %}
