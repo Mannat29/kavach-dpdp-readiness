@@ -56,9 +56,12 @@ def risk_analysis():
 @bp.route("/reports")
 def reports():
     from app.ledger import append_ledger
+    from app.reports import get_reports_summary
     conn = get_db()
+    init_db()
     append_ledger("report_generated", {"report_type": "compliance_summary"}, conn)
-    return render_template("reports.html", active_page="reports")
+    summary = get_reports_summary(conn)
+    return render_template("reports.html", active_page="reports", summary=summary)
 
 
 @bp.route("/evidence")
@@ -1175,4 +1178,30 @@ def public_verify(pack_id: str):
         erasures_count=erasures_count,
         breach_count=breach_count,
     )
+
+
+# ---------------------------------------------------------------------------
+# Reports API
+# ---------------------------------------------------------------------------
+@bp.route("/api/reports/summary", methods=["GET"])
+def api_reports_summary():
+    """Return compliance readiness report summary."""
+    from app.reports import get_reports_summary
+    conn = get_db()
+    init_db()
+    summary = get_reports_summary(conn)
+    return jsonify(summary)
+
+
+@bp.route("/api/reports/export", methods=["GET"])
+def api_reports_export():
+    """Return self-contained printable HTML compliance readiness report."""
+    from app.ledger import append_ledger
+    from app.reports import get_reports_summary, generate_printable_report_html
+    conn = get_db()
+    init_db()
+    summary = get_reports_summary(conn)
+    html_content = generate_printable_report_html(summary, conn)
+    append_ledger("report_generated", {"report_type": "printable_export"}, conn)
+    return Response(html_content, mimetype="text/html; charset=utf-8")
 
