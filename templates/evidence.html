@@ -2,22 +2,323 @@
 {% block title %}Evidence – Kavach{% endblock %}
 
 {% block content %}
-<div class="page-container stub-page">
-    <div class="page-header">
+<div class="page-container evidence-page">
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
         <div>
             <h1 class="page-title">Evidence &amp; Audit Ledger</h1>
-            <p class="page-subtitle">Hash-chained audit trail and cryptographic proof for privacy operations.</p>
+            <p class="page-subtitle">Cryptographic proof of privacy operations and tamper-evident audit trail.</p>
+        </div>
+        <div id="chain-badge-container">
+            <span id="chain-badge" class="badge badge-success" aria-live="polite" style="font-size: 1.05rem; padding: 0.6rem 1.1rem; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+                <span class="badge-icon" aria-hidden="true">&#x2714;</span>
+                <span class="badge-text">Chain intact</span>
+            </span>
         </div>
     </div>
 
-    <section class="card stub-card" aria-label="Feature coming soon">
-        <div class="stub-icon" aria-hidden="true">&#x1F510;</div>
-        <div class="badge badge-info mb-2">Coming Soon</div>
-        <h2 class="stub-title">Evidence Ledger is Coming Soon</h2>
-        <p class="stub-text">Cryptographically verifiable, hash-chained audit logging to prove erasure compliance, access grants, and data governance steps without revealing raw personal data.</p>
-        <div class="stub-actions">
-            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    <!-- Summary Overview Card -->
+    <div class="card mb-4" style="padding: 1.25rem 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; align-items: center;">
+            <div>
+                <div style="font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">Head Hash</div>
+                <div id="chain-head-hash" style="font-family: monospace; font-size: 0.88rem; color: #1e293b; word-break: break-all; background: #f8fafc; padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid #e2e8f0;">
+                    Loading...
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">Total Events</div>
+                <div id="chain-length" style="font-size: 1.5rem; font-weight: 700; color: #0f172a;">
+                    0
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-start;">
+                <button id="btn-verify" class="btn btn-primary" type="button" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                    <span>&#x1F50D;</span> Verify now
+                </button>
+                <button id="btn-export" class="btn btn-secondary" type="button" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                    <span>&#x1F4E6;</span> Export evidence pack
+                </button>
+            </div>
+        </div>
+
+        <div id="verify-reason" style="display: none; margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.9rem;" role="alert"></div>
+
+        <!-- Export pack notice banner -->
+        <div id="export-result" style="display: none; margin-top: 1rem; padding: 1rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <strong style="color: #166534; font-size: 1rem;">Evidence Pack Exported Successfully</strong>
+                <span id="export-pack-id" class="badge badge-info" style="font-family: monospace; font-size: 0.9rem;"></span>
+            </div>
+            <p style="margin: 0 0 0.75rem 0; font-size: 0.88rem; color: #334155;">
+                Includes signed ledger, risk deductions, erasure receipts, breach simulations, and honest limitation disclosures.
+            </p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a id="export-download-link" href="#" class="btn btn-sm btn-primary" download>Download ZIP</a>
+                <a id="export-verify-link" href="#" class="btn btn-sm btn-outline" target="_blank">Open Public Verify Page &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dev Only Tamper Demo Controls -->
+    {% if is_dev %}
+    <section class="card mb-4" style="border: 1px dashed #f59e0b; background: #fffbeb; padding: 1.25rem 1.5rem;" aria-label="Demo controls">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+            <h2 style="font-size: 1.05rem; font-weight: 700; color: #92400e; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <span>&#x1F9EA;</span> Demo controls (dev only)
+            </h2>
+            <span class="badge badge-warning" style="font-size: 0.75rem; text-transform: uppercase;">KAVACH_DEV=1</span>
+        </div>
+        <p style="font-size: 0.88rem; color: #78350f; margin-bottom: 1rem;">
+            Simulate an unauthorized direct database modification without recomputing cryptographic hashes to verify that the audit chain catches tampering.
+        </p>
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <label for="tamper-target-id" style="font-size: 0.85rem; font-weight: 600; color: #78350f;">Target Event ID:</label>
+                <input type="number" id="tamper-target-id" placeholder="Last" style="width: 80px; padding: 0.4rem 0.5rem; border: 1px solid #d97706; border-radius: 4px; font-size: 0.9rem;" min="1">
+            </div>
+            <button id="btn-tamper" class="btn btn-danger btn-sm" type="button" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                <span>&#x26A0;</span> Tamper event payload
+            </button>
+            <button id="btn-repair" class="btn btn-secondary btn-sm" type="button" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                <span>&#x21BA;</span> Repair ledger (restore)
+            </button>
+            <span id="tamper-feedback" style="font-size: 0.85rem; font-weight: 500;"></span>
         </div>
     </section>
+    {% endif %}
+
+    <!-- Filter & Table Controls -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="filter-type" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Filter by type:</label>
+            <select id="filter-type" style="padding: 0.4rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88rem; background: white;">
+                <option value="">All events</option>
+            </select>
+        </div>
+        <div style="font-size: 0.85rem; color: #64748b;">
+            Showing <span id="table-count-label">0</span> events
+        </div>
+    </div>
+
+    <!-- Events Table -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                <thead>
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #475569;">
+                        <th style="padding: 0.75rem 1rem; width: 60px;">ID</th>
+                        <th style="padding: 0.75rem 1rem; width: 180px;">Time (UTC)</th>
+                        <th style="padding: 0.75rem 1rem; width: 170px;">Type</th>
+                        <th style="padding: 0.75rem 1rem; width: 140px;">Hash</th>
+                        <th style="padding: 0.75rem 1rem; width: 140px;">Prev Hash</th>
+                        <th style="padding: 0.75rem 1rem;">Payload Excerpt</th>
+                    </tr>
+                </thead>
+                <tbody id="ledger-table-body">
+                    <tr>
+                        <td colspan="6" style="padding: 2rem; text-align: center; color: #94a3b8;">Loading audit ledger events...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const chainBadge = document.getElementById("chain-badge");
+    const headHashEl = document.getElementById("chain-head-hash");
+    const lengthEl = document.getElementById("chain-length");
+    const verifyReasonEl = document.getElementById("verify-reason");
+    const tableBody = document.getElementById("ledger-table-body");
+    const filterType = document.getElementById("filter-type");
+    const countLabel = document.getElementById("table-count-label");
+
+    const btnVerify = document.getElementById("btn-verify");
+    const btnExport = document.getElementById("btn-export");
+    const exportResult = document.getElementById("export-result");
+    const exportPackId = document.getElementById("export-pack-id");
+    const exportDownloadLink = document.getElementById("export-download-link");
+    const exportVerifyLink = document.getElementById("export-verify-link");
+
+    const btnTamper = document.getElementById("btn-tamper");
+    const btnRepair = document.getElementById("btn-repair");
+    const tamperTargetId = document.getElementById("tamper-target-id");
+    const tamperFeedback = document.getElementById("tamper-feedback");
+
+    async function checkVerification() {
+        try {
+            const res = await fetch("/api/ledger/verify");
+            const data = await res.json();
+            updateVerificationUI(data);
+        } catch (e) {
+            console.error("Verification failed", e);
+        }
+    }
+
+    function updateVerificationUI(data) {
+        lengthEl.textContent = data.length || 0;
+        headHashEl.textContent = data.head_hash || "None (Genesis)";
+
+        if (data.ok) {
+            chainBadge.className = "badge badge-success";
+            chainBadge.style.backgroundColor = "#16a34a";
+            chainBadge.style.color = "#ffffff";
+            chainBadge.innerHTML = '<span class="badge-icon" aria-hidden="true">&#x2714;</span><span class="badge-text">Chain intact</span>';
+            verifyReasonEl.style.display = "none";
+        } else {
+            chainBadge.className = "badge badge-danger";
+            chainBadge.style.backgroundColor = "#dc2626";
+            chainBadge.style.color = "#ffffff";
+            chainBadge.innerHTML = '<span class="badge-icon" aria-hidden="true">&#x26A0;</span><span class="badge-text">Tampering detected at event #' + (data.first_broken_id || "?") + '</span>';
+            verifyReasonEl.style.display = "block";
+            verifyReasonEl.style.background = "#fef2f2";
+            verifyReasonEl.style.color = "#991b1b";
+            verifyReasonEl.style.border = "1px solid #fecaca";
+            verifyReasonEl.textContent = "Tamper detected: " + (data.reason || "Hash chain mismatch");
+        }
+    }
+
+    async function loadEvents() {
+        const type = filterType ? filterType.value : "";
+        let url = "/api/ledger?per_page=100";
+        if (type) {
+            url += "&type=" + encodeURIComponent(type);
+        }
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            countLabel.textContent = data.total;
+
+            // Populate filter options if needed
+            if (filterType && filterType.options.length <= 1 && data.types) {
+                data.types.forEach(t => {
+                    const opt = document.createElement("option");
+                    opt.value = t;
+                    opt.textContent = t;
+                    filterType.appendChild(opt);
+                });
+            }
+
+            if (!data.events || data.events.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #94a3b8;">No events recorded in ledger.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = data.events.map(ev => {
+                const excerpt = JSON.stringify(ev.payload || {}).replace(/"/g, '&quot;');
+                return `
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 0.75rem 1rem; font-weight: 600; color: #334155;">#${ev.id}</td>
+                        <td style="padding: 0.75rem 1rem; color: #64748b; font-size: 0.82rem;">${ev.ts}</td>
+                        <td style="padding: 0.75rem 1rem;"><span class="badge badge-info" style="font-size: 0.8rem;">${ev.type}</span></td>
+                        <td style="padding: 0.75rem 1rem; font-family: monospace; font-size: 0.82rem; color: #0284c7;" title="${ev.hash}">${ev.short_hash}</td>
+                        <td style="padding: 0.75rem 1rem; font-family: monospace; font-size: 0.82rem; color: #64748b;" title="${ev.prev_hash}">${ev.short_prev_hash}</td>
+                        <td style="padding: 0.75rem 1rem; font-family: monospace; font-size: 0.8rem; color: #475569; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${excerpt}">${excerpt}</td>
+                    </tr>
+                `;
+            }).join("");
+        } catch (e) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #ef4444;">Failed to load events.</td></tr>';
+        }
+    }
+
+    if (filterType) {
+        filterType.addEventListener("change", loadEvents);
+    }
+
+    if (btnVerify) {
+        btnVerify.addEventListener("click", async function() {
+            btnVerify.disabled = true;
+            btnVerify.textContent = "Verifying...";
+            await checkVerification();
+            await loadEvents();
+            btnVerify.disabled = false;
+            btnVerify.innerHTML = '<span>&#x1F50D;</span> Verify now';
+        });
+    }
+
+    if (btnExport) {
+        btnExport.addEventListener("click", async function() {
+            btnExport.disabled = true;
+            btnExport.textContent = "Exporting...";
+            try {
+                const res = await fetch("/api/evidence/export", { method: "POST" });
+                const data = await res.json();
+                if (data.success) {
+                    exportPackId.textContent = data.pack_id;
+                    exportDownloadLink.href = data.download_url;
+                    exportVerifyLink.href = data.verify_url;
+                    exportResult.style.display = "block";
+                    await checkVerification();
+                    await loadEvents();
+                } else {
+                    alert("Export failed: " + (data.error || "Unknown error"));
+                }
+            } catch (e) {
+                alert("Export request failed");
+            } finally {
+                btnExport.disabled = false;
+                btnExport.innerHTML = '<span>&#x1F4E6;</span> Export evidence pack';
+            }
+        });
+    }
+
+    if (btnTamper) {
+        btnTamper.addEventListener("click", async function() {
+            const targetId = tamperTargetId.value ? parseInt(tamperTargetId.value, 10) : null;
+            tamperFeedback.textContent = "Tampering...";
+            tamperFeedback.style.color = "#b45309";
+            try {
+                const res = await fetch("/api/dev/tamper", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(targetId ? { id: targetId } : {})
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    tamperFeedback.textContent = "Tampered event #" + data.tampered_id;
+                    tamperFeedback.style.color = "#dc2626";
+                    await checkVerification();
+                    await loadEvents();
+                } else {
+                    tamperFeedback.textContent = "Error: " + (data.error || "failed");
+                }
+            } catch (e) {
+                tamperFeedback.textContent = "Request error";
+            }
+        });
+    }
+
+    if (btnRepair) {
+        btnRepair.addEventListener("click", async function() {
+            tamperFeedback.textContent = "Restoring...";
+            tamperFeedback.style.color = "#0369a1";
+            try {
+                const res = await fetch("/api/dev/repair", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    tamperFeedback.textContent = data.message || "Restored";
+                    tamperFeedback.style.color = "#16a34a";
+                    await checkVerification();
+                    await loadEvents();
+                } else {
+                    tamperFeedback.textContent = "Error: " + (data.error || "failed");
+                }
+            } catch (e) {
+                tamperFeedback.textContent = "Request error";
+            }
+        });
+    }
+
+    // Initial load
+    checkVerification();
+    loadEvents();
+});
+</script>
 {% endblock %}

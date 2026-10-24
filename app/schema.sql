@@ -28,10 +28,32 @@ CREATE TABLE IF NOT EXISTS rights_requests (
 
 CREATE TABLE IF NOT EXISTS ledger (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_json TEXT NOT NULL,
-    prev_hash TEXT,
-    entry_hash TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ts TEXT NOT NULL,
+    type TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    prev_hash TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    event_json TEXT GENERATED ALWAYS AS (payload_json) STORED,
+    entry_hash TEXT GENERATED ALWAYS AS (hash) STORED,
+    created_at TEXT GENERATED ALWAYS AS (ts) STORED
+);
+
+CREATE TABLE IF NOT EXISTS evidence_packs (
+    pack_id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    head_hash TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    chain_ok INTEGER NOT NULL,
+    path TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ledger_tamper_backup (
+    id INTEGER PRIMARY KEY,
+    payload_json TEXT NOT NULL,
+    prev_hash TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    ts TEXT NOT NULL,
+    type TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS findings (

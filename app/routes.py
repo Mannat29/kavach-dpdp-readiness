@@ -1,7 +1,7 @@
 import json
 import os
 import tempfile
-from flask import Blueprint, render_template, request, jsonify, Response
+from flask import Blueprint, render_template, request, jsonify, Response, send_file, abort, url_for
 
 from app.db import get_db, init_db
 from app.inventory import (
@@ -55,12 +55,16 @@ def risk_analysis():
 
 @bp.route("/reports")
 def reports():
+    from app.ledger import append_ledger
+    conn = get_db()
+    append_ledger("report_generated", {"report_type": "compliance_summary"}, conn)
     return render_template("reports.html", active_page="reports")
 
 
 @bp.route("/evidence")
 def evidence():
-    return render_template("evidence.html", active_page="evidence")
+    is_dev = os.environ.get("KAVACH_DEV") == "1"
+    return render_template("evidence.html", active_page="evidence", is_dev=is_dev)
 
 
 # ---------------------------------------------------------------------------
@@ -90,6 +94,8 @@ def api_upload():
     run_entity_resolution(conn)
 
     summary = get_inventory_summary(conn)
+    from app.ledger import append_ledger
+    append_ledger("scan_completed", {"source_count": uploaded_count, "summary": summary}, conn)
     return jsonify({"success": True, "files_scanned": uploaded_count, "summary": summary})
 
 
@@ -100,6 +106,8 @@ def api_scan_demo():
     init_db()
     scan_demo_data(conn)
     summary = get_inventory_summary(conn)
+    from app.ledger import append_ledger
+    append_ledger("scan_completed", {"demo": True, "files_scanned": len(summary.get("sources", []))}, conn)
     return jsonify({"success": True, "summary": summary})
 
 
@@ -349,6 +357,8 @@ def api_questionnaire():
         answers = data.get("answers", data)
         saved = save_questionnaire_answers(answers, conn)
         facts = collect_facts(conn)
+        from app.ledger import append_ledger
+        append_ledger("questionnaire_updated", {"keys": list(answers.keys()), "count": len(saved)}, conn)
         return jsonify({"success": True, "saved": saved, "facts": facts})
     else:
         cur = conn.cursor()
@@ -446,7 +456,7 @@ def api_rights_approve(request_id: int):
     cur.execute("UPDATE rights_requests SET status = 'approved' WHERE id = ?", (request_id,))
     conn.commit()
     from app.ledger import append_ledger
-    append_ledger({"event": "approved", "request_id": request_id}, conn)
+    append_ledger("plan_approved", {"request_id": request_id}, conn)
     return jsonify({"success": True, "request_id": request_id, "status": "approved"})
 
 
@@ -557,7 +567,7 @@ def api_rights_reject(request_id: int):
     cur.execute("UPDATE rights_requests SET status = 'rejected' WHERE id = ?", (request_id,))
     conn.commit()
     from app.ledger import append_ledger
-    append_ledger({"event": "rejected", "request_id": request_id}, conn)
+    append_ledger("request_rejected", {"request_id": request_id, "reason": "Administrative rejection"}, conn)
     return jsonify({"success": True, "request_id": request_id, "status": "rejected"})
 
 
@@ -959,4 +969,210 @@ def api_breach_export(sim_id: int):
 </body>
 </html>"""
     return Response(html_content, mimetype="text/html")
+
+
+# ---------------------------------------------------------------------------
+# Ledger, Evidence Pack, Dev Tamper, and Public Verify Endpoints
+# ---------------------------------------------------------------------------
+@bp.route("/api/ledger")
+def api_ledger():
+    """Return paged audit ledger events with short hashes."""
+    conn = get_db()
+    cur = conn.cursor()
+
+    type_filter = request.args.get("type", "").strip()
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (ValueError, TypeError):
+        page = 1
+    try:
+        per_page = max(1, min(100, int(request.args.get("per_page", 20))))
+    except (ValueError, TypeError):
+        per_page = 20
+    offset = (page - 1) * per_page
+
+    query_count = "SELECT COUNT(*) as c FROM ledger"
+    query_events = "SELECT id, ts, type, payload_json, prev_hash, hash FROM ledger"
+    params = []
+
+    if type_filter:
+        query_count += " WHERE type = ?"
+        query_events += " WHERE type = ?"
+        params.append(type_filter)
+
+    cur.execute(query_count, params)
+    total = cur.fetchone()["c"]
+
+    query_events += " ORDER BY id DESC LIMIT ? OFFSET ?"
+    cur.execute(query_events, params + [per_page, offset])
+    rows = cur.fetchall()
+
+    events = []
+    for r in rows:
+        try:
+            payload = json.loads(r["payload_json"])
+        except Exception:
+            payload = {}
+        h = r["hash"] or ""
+        ph = r["prev_hash"] or ""
+        events.append({
+            "id": r["id"],
+            "ts": r["ts"],
+            "type": r["type"],
+            "payload": payload,
+            "hash": h,
+            "short_hash": h[:12] if h else "",
+            "prev_hash": ph,
+            "short_prev_hash": ph[:12] if ph else "",
+        })
+
+    # Available event types for UI dropdown
+    cur.execute("SELECT DISTINCT type FROM ledger ORDER BY type")
+    all_types = [t_row["type"] for t_row in cur.fetchall()]
+
+    return jsonify({
+        "events": events,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "types": all_types,
+    })
+
+
+@bp.route("/api/ledger/verify")
+def api_ledger_verify():
+    """Verify integrity of audit ledger hash chain."""
+    from app.ledger import verify_chain
+    conn = get_db()
+    result = verify_chain(conn)
+    return jsonify(result)
+
+
+@bp.route("/api/dev/tamper", methods=["POST"])
+def api_dev_tamper():
+    """Tamper with a stored ledger event payload (dev only)."""
+    if os.environ.get("KAVACH_DEV") != "1":
+        return jsonify({"error": "Dev mode not enabled"}), 404
+
+    from app.ledger import tamper_ledger_event
+    conn = get_db()
+    data = request.get_json(silent=True) or {}
+    event_id = data.get("id")
+    if event_id is None:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM ledger ORDER BY id DESC LIMIT 1")
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "No ledger events exist to tamper"}), 400
+        event_id = row["id"]
+    else:
+        try:
+            event_id = int(event_id)
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid event ID"}), 400
+
+    try:
+        res = tamper_ledger_event(event_id, conn)
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@bp.route("/api/dev/repair", methods=["POST"])
+def api_dev_repair():
+    """Restore tampered ledger event payload from backup (dev only)."""
+    if os.environ.get("KAVACH_DEV") != "1":
+        return jsonify({"error": "Dev mode not enabled"}), 404
+
+    from app.ledger import repair_ledger_event
+    conn = get_db()
+    data = request.get_json(silent=True) or {}
+    event_id = data.get("id")
+    if event_id is not None:
+        try:
+            event_id = int(event_id)
+        except (ValueError, TypeError):
+            event_id = None
+
+    try:
+        res = repair_ledger_event(event_id, conn)
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@bp.route("/api/evidence/export", methods=["POST"])
+def api_evidence_export():
+    """Export evidence pack ZIP containing audit ledger, manifest, and summaries."""
+    from app.ledger import export_evidence_pack
+    conn = get_db()
+    pack_meta = export_evidence_pack(conn)
+    pack_id = pack_meta["pack_id"]
+    return jsonify({
+        "success": True,
+        "pack_id": pack_id,
+        "head_hash": pack_meta["head_hash"],
+        "chain_ok": pack_meta["chain_ok"],
+        "score": pack_meta["score"],
+        "download_url": url_for("main.api_evidence_download", pack_id=pack_id),
+        "verify_url": url_for("main.public_verify", pack_id=pack_id),
+    })
+
+
+@bp.route("/api/evidence/download/<pack_id>")
+def api_evidence_download(pack_id: str):
+    """Download exported evidence pack ZIP."""
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT path FROM evidence_packs WHERE pack_id = ?", (pack_id,))
+    row = cur.fetchone()
+    if not row or not os.path.exists(row["path"]):
+        return jsonify({"error": f"Evidence pack {pack_id} not found"}), 404
+
+    return send_file(
+        row["path"],
+        as_attachment=True,
+        download_name=f"evidence_{pack_id}.zip",
+        mimetype="application/zip",
+    )
+
+
+@bp.route("/verify/<pack_id>")
+def public_verify(pack_id: str):
+    """Public verification page: standalone clean page showing integrity and readiness status."""
+    from app.ledger import verify_chain
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM evidence_packs WHERE pack_id = ?", (pack_id,))
+    pack = cur.fetchone()
+    if not pack:
+        abort(404)
+
+    # Live integrity check
+    chain_status = verify_chain(conn)
+
+    # Check whether the head_hash at export is still present in the chain
+    cur.execute("SELECT id, hash FROM ledger WHERE hash = ?", (pack["head_hash"],))
+    head_hash_row = cur.fetchone()
+    head_hash_in_chain = head_hash_row is not None
+
+    # Count completed erasure requests
+    cur.execute("SELECT COUNT(*) as c FROM rights_requests WHERE status = 'executed'")
+    erasures_count = cur.fetchone()["c"]
+
+    # Count breach simulations run
+    cur.execute("SELECT COUNT(*) as c FROM breach_simulations")
+    breach_count = cur.fetchone()["c"]
+
+    is_intact = bool(chain_status["ok"] and head_hash_in_chain)
+
+    return render_template(
+        "public_verify.html",
+        pack=pack,
+        chain_status=chain_status,
+        head_hash_in_chain=head_hash_in_chain,
+        is_intact=is_intact,
+        erasures_count=erasures_count,
+        breach_count=breach_count,
+    )
 

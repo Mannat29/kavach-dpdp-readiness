@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kavach Evidence Verification – Pack #{{ pack.pack_id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .verify-card {
+            max-width: 760px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            padding: 2.5rem;
+        }
+        .verify-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .logo-shield {
+            font-size: 1.75rem;
+        }
+        .logo-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+        .logo-subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin: 0;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.25rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .status-badge.intact {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+        .status-badge.broken {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .metric-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+        }
+        .metric-label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+            font-size: 0.92rem;
+        }
+        .detail-table th, .detail-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .detail-table th {
+            width: 38%;
+            color: #475569;
+            font-weight: 600;
+            background: #f8fafc;
+        }
+        .hash-mono {
+            font-family: monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            color: #0284c7;
+        }
+        .explanation-section {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .explanation-title {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .notice-box {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+            padding: 1rem 1.25rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.85rem;
+            color: #78350f;
+            line-height: 1.45;
+        }
+    </style>
+</head>
+<body>
+
+<div class="verify-card">
+    <div class="verify-header">
+        <div class="logo-box">
+            <div class="logo-shield" aria-hidden="true">&#x1F6E1;&#xFE0F;</div>
+            <div>
+                <h1 class="logo-title">Kavach Public Verification</h1>
+                <p class="logo-subtitle">Cryptographic Evidence &amp; Integrity Attestation</p>
+            </div>
+        </div>
+        <div>
+            {% if is_intact %}
+            <span class="status-badge intact" aria-label="Status: Chain Intact">
+                <span aria-hidden="true">&#x2714;</span> Chain Intact
+            </span>
+            {% else %}
+            <span class="status-badge broken" aria-label="Status: Verification Failed">
+                <span aria-hidden="true">&#x26A0;</span> Verification Failed
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Overview Metrics -->
+    <div class="metric-grid">
+        <div class="metric-box">
+            <div class="metric-label">Readiness Score</div>
+            <div class="metric-value">{{ pack.score }} <span style="font-size: 0.9rem; color: #64748b; font-weight: normal;">/ 100</span></div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-label">Erasures Completed</div>
+            <div class="metric-value">{{ erasures_count }}</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-label">Breach Simulations</div>
+            <div class="metric-value">{{ breach_count }}</div>
+        </div>
+    </div>
+
+    <!-- Verification Details -->
+    <table class="detail-table">
+        <tbody>
+            <tr>
+                <th>Evidence Pack ID</th>
+                <td style="font-family: monospace; font-weight: 700; color: #0f172a;">{{ pack.pack_id }}</td>
+            </tr>
+            <tr>
+                <th>Generated Date (UTC)</th>
+                <td>{{ pack.created_at }}</td>
+            </tr>
+            <tr>
+                <th>Export Head Hash</th>
+                <td class="hash-mono">{{ pack.head_hash }}</td>
+            </tr>
+            <tr>
+                <th>Live Chain Status</th>
+                <td>
+                    {% if chain_status.ok %}
+                    <span style="color: #16a34a; font-weight: 600;">&#x2714; Valid append-only chain ({{ chain_status.length }} events)</span>
+                    {% else %}
+                    <span style="color: #dc2626; font-weight: 600;">&#x26A0; Tampering detected at event #{{ chain_status.first_broken_id }} ({{ chain_status.reason }})</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Export Head Hash in Live Chain</th>
+                <td>
+                    {% if head_hash_in_chain %}
+                    <span style="color: #16a34a; font-weight: 600;">&#x2714; Present and verified in current chain</span>
+                    {% else %}
+                    <span style="color: #dc2626; font-weight: 600;">&#x26A0; Missing from current chain (possible row deletion or replacement)</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Explanation -->
+    <div class="explanation-section">
+        <div class="explanation-title">&#x1F4D6; What this verification means</div>
+        <p style="margin: 0 0 0.75rem 0; color: #334155;">
+            <strong>What it means:</strong> The audit ledger relies on an append-only cryptographic SHA-256 hash chain. A valid badge proves that no audit records have been retroactively altered, inserted, deleted, or reordered since this evidence pack was generated.
+        </p>
+        <p style="margin: 0; color: #334155;">
+            <strong>What it does NOT mean:</strong> This verification does not certify 100% legal compliance with India's DPDP Act, does not prove whether personal data exists in unmonitored external systems or offline paper backups, and does not serve as a government-issued audit clearance.
+        </p>
+    </div>
+
+    <!-- Legal Disclaimer Notice -->
+    <div class="notice-box">
+        <strong>Important Notice:</strong> This report is generated by Kavach as a technical DPDP readiness tool for small businesses. It does <em>not</em> constitute legal advice or formal compliance certification. All statutory citations and rules must be independently verified by legal counsel.
+    </div>
+</div>
+
+</body>
+</html>

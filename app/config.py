@@ -9,6 +9,7 @@ ENABLED_PAGES = [
     "Rights Desk",
     "Breach Simulator",
     "Risk Analysis",
+    "Evidence",
 ]
 
 RESPONSE_DAYS = 30  # TODO verify against DPDP Rules 2025
