@@ -12,5 +12,6 @@ tmp/
 dist/
 data/workspace/
 data/out/
+data/.salt
 *.egg-info/
 .pytest_cache/

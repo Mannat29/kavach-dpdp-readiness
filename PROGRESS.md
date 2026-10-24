@@ -1,10 +1,9 @@
 # Progress
 
 ## Done
-- Task 5a & 5b: Breach simulator backend & interactive UI with blast-radius graph and drafts.
-- Task 6a: Audit ledger, tamper demo, Evidence page, evidence pack & public verify page.
-- Task 6b: Reports page and self-contained printable readiness report.
-  - Compliance summary API (`GET /api/reports/summary`) with scan summary, score deductions, risks, questionnaire, rights requests, erasure receipts, breach simulations, and prioritised recommended actions (max 8, overdue requests first).
-  - Printable HTML export (`GET /api/reports/export`) with print stylesheet, notices, detector accuracy benchmark, and ledger event `report_generated`.
-  - Accessible Reports page (`templates/reports.html`) with "Download printable report", empty state, and no colour-only meaning.
-  - "Reports" added to `ENABLED_PAGES`; 157 tests passing (`tests/test_reports.py` + full test suite).
+- Task 7: Hardening, input safety, offline vendoring, and documentation.
+  - Dependencies verified; salt moved to env `KAVACH_SALT` with fallback to `data/.salt` (git-ignored).
+  - Upload safety guards (10 MB size, 50k rows, .xlsx/.csv/.txt only, path traversal & malformed error handling).
+  - Offline Cytoscape vendored to `static/vendor/cytoscape.min.js`; zero remote calls / LLM runtime dependencies.
+  - `scripts/demo_reset.py` for one-command reset; comprehensive `README.md` and `docs/DEMO.md` script.
+  - 166 tests passing (`python -m pytest -q`).

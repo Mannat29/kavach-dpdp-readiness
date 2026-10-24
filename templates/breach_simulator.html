@@ -2,7 +2,12 @@
 {% block title %}Breach Simulator – Kavach{% endblock %}
 
 {% block head_extra %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/cytoscape.min.js') }}"></script>
+<script>
+  if (typeof cytoscape === 'undefined') {
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"><\/script>');
+  }
+</script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/breach_simulator.css') }}">
 {% endblock %}
 

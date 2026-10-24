@@ -14,6 +14,7 @@ def create_app(test_config=None):
         SECRET_KEY="dev",
         DATABASE=default_db,
         UPLOAD_FOLDER=os.path.join(app.instance_path, "uploads"),
+        MAX_CONTENT_LENGTH=15 * 1024 * 1024,
     )
 
     if test_config:
@@ -60,5 +61,17 @@ def create_app(test_config=None):
 
     from . import routes
     app.register_blueprint(routes.bp)
+
+    @app.errorhandler(413)
+    def request_too_large(e):
+        from flask import jsonify
+        return jsonify({"error": "Uploaded payload exceeds the maximum allowed limit of 10 MB."}), 413
+
+    @app.errorhandler(500)
+    def internal_error(e):
+        import logging
+        from flask import jsonify
+        logging.getLogger(__name__).exception("Internal server error: %s", e)
+        return jsonify({"error": "An internal server error occurred. Please check server logs."}), 500
 
     return app

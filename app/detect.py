@@ -1,13 +1,61 @@
 """PII detection module: pure functions, no I/O side effects."""
 from datetime import datetime
 import hashlib
+import logging
+import os
 import re
+import secrets
 from typing import List, Dict, Optional
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Configuration & Salt Management
 # ---------------------------------------------------------------------------
-SALT = "kavach-dpdp-2026"
+logger = logging.getLogger(__name__)
+_warned_salt = False
+
+
+def get_salt() -> str:
+    """Read hashing salt from env KAVACH_SALT or data/.salt.
+
+    If unset, generates a random salt, persists it to data/.salt (git-ignored),
+    and logs a warning once.
+    """
+    global _warned_salt
+    salt = os.environ.get("KAVACH_SALT")
+    if salt:
+        return salt.strip()
+
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    salt_file = os.path.join(base_dir, "data", ".salt")
+    if os.path.exists(salt_file):
+        try:
+            with open(salt_file, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if content:
+                    return content
+        except OSError:
+            pass
+
+    # First run without KAVACH_SALT or data/.salt: generate random salt
+    generated = secrets.token_hex(16)
+    os.makedirs(os.path.dirname(salt_file), exist_ok=True)
+    try:
+        with open(salt_file, "w", encoding="utf-8") as f:
+            f.write(generated)
+    except OSError as e:
+        logger.warning("Could not persist generated salt to %s: %s", salt_file, e)
+
+    if not _warned_salt:
+        logger.warning(
+            "KAVACH_SALT environment variable is unset; generated random salt and saved to data/.salt. "
+            "Note: this is pseudonymisation, not anonymisation. In production, use keyed HMAC with a secret kept outside the database."
+        )
+        _warned_salt = True
+
+    return generated
+
+
+SALT = get_salt()
 
 # ---------------------------------------------------------------------------
 # Verhoeff algorithm
@@ -57,10 +105,11 @@ def mask_name(name: str) -> str:
     return " ".join(masked_words)
 
 
-def hash_value(value: str) -> str:
+def hash_value(value: str, salt: Optional[str] = None) -> str:
     """SHA-256 hash of salt + normalized value."""
+    s = salt if salt is not None else get_salt()
     normalized = re.sub(r"\s+", "", value).lower()
-    return hashlib.sha256((SALT + normalized).encode("utf-8")).hexdigest()
+    return hashlib.sha256((s + normalized).encode("utf-8")).hexdigest()
 
 
 # ---------------------------------------------------------------------------

@@ -1,9 +1,11 @@
 import json
+import logging
 import os
 import tempfile
 from flask import Blueprint, render_template, request, jsonify, Response, send_file, abort, url_for
 
 from app.db import get_db, init_db
+from app.ingest import ALLOWED_EXTENSIONS, MAX_FILE_SIZE, MAX_ROWS
 from app.inventory import (
     scan_and_ingest_file,
     run_entity_resolution,
@@ -15,6 +17,8 @@ from app.rules import (
     save_questionnaire_answers,
     collect_facts,
 )
+
+logger = logging.getLogger(__name__)
 
 bp = Blueprint("main", __name__)
 
@@ -87,13 +91,63 @@ def api_upload():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     workspace_dir = os.path.join(base_dir, "data", "workspace")
     os.makedirs(workspace_dir, exist_ok=True)
+    abs_workspace = os.path.abspath(workspace_dir)
+
     for f in files:
-        if f and f.filename:
-            safe_name = os.path.basename(f.filename)
-            save_path = os.path.join(workspace_dir, safe_name)
-            f.save(save_path)
+        if not f or not f.filename:
+            continue
+
+        # Sanitise filename and prevent path traversal
+        raw_name = f.filename.replace("\\", "/")
+        safe_name = os.path.basename(raw_name).strip()
+        if not safe_name or safe_name in (".", ".."):
+            return jsonify({"error": f"Invalid filename: '{f.filename}'."}), 400
+
+        # Extension whitelist: only .xlsx, .csv, .txt
+        ext = os.path.splitext(safe_name)[1].lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            return jsonify({
+                "error": f"Unsupported file extension '{ext}' for file '{safe_name}'. Only .xlsx, .csv, and .txt files are accepted."
+            }), 400
+
+        # Upload size check per file
+        f.seek(0, os.SEEK_END)
+        file_size = f.tell()
+        f.seek(0)
+        if file_size == 0:
+            return jsonify({"error": f"File '{safe_name}' is empty (0 bytes)."}), 400
+        if file_size > MAX_FILE_SIZE:
+            return jsonify({
+                "error": f"File '{safe_name}' exceeds maximum allowed upload size of 10 MB ({file_size:,} bytes)."
+            }), 400
+
+        save_path = os.path.abspath(os.path.join(workspace_dir, safe_name))
+        # Ignore and prevent path traversal
+        if not save_path.startswith(abs_workspace):
+            return jsonify({"error": f"Path traversal attempt rejected for '{safe_name}'."}), 400
+
+        f.save(save_path)
+
+        try:
             scan_and_ingest_file(save_path, conn)
             uploaded_count += 1
+        except ValueError as ve:
+            logger.warning("Validation error ingesting file %s: %s", safe_name, ve)
+            if os.path.exists(save_path):
+                try:
+                    os.remove(save_path)
+                except OSError:
+                    pass
+            return jsonify({"error": str(ve)}), 400
+        except Exception as exc:
+            logger.exception("Unexpected error scanning file %s: %s", safe_name, exc)
+            if os.path.exists(save_path):
+                try:
+                    os.remove(save_path)
+                except OSError:
+                    pass
+            return jsonify({"error": f"Could not process file '{safe_name}'. Please ensure it is a valid, uncorrupted file."}), 400
+
     run_entity_resolution(conn)
 
     summary = get_inventory_summary(conn)
@@ -127,8 +181,13 @@ def api_reset():
     cur.execute("DELETE FROM sources")
     cur.execute("DELETE FROM questionnaire")
     cur.execute("DELETE FROM risks")
+    cur.execute("DELETE FROM rights_requests")
+    cur.execute("DELETE FROM breach_simulations")
+    cur.execute("DELETE FROM ledger")
+    cur.execute("DELETE FROM evidence_packs")
+    cur.execute("DELETE FROM ledger_tamper_backup")
     try:
-        cur.execute("DELETE FROM sqlite_sequence WHERE name IN ('sources', 'findings', 'people', 'person_records', 'risks')")
+        cur.execute("DELETE FROM sqlite_sequence WHERE name IN ('sources', 'findings', 'people', 'person_records', 'risks', 'rights_requests', 'breach_simulations', 'ledger', 'evidence_packs')")
     except Exception:
         pass
     cur.execute("PRAGMA foreign_keys = ON")
