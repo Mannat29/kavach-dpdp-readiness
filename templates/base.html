@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kavach{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">Kavach</div>
+        <ul>
+            <li><a href="{{ url_for('main.scanner') }}">Scanner</a></li>
+            <li><a href="{{ url_for('main.data_map') }}">Data Map</a></li>
+            <li><a href="{{ url_for('main.rights_desk') }}">Rights Desk</a></li>
+            <li><a href="{{ url_for('main.breach_simulator') }}">Breach Simulator</a></li>
+            <li><a href="{{ url_for('main.risk_analysis') }}">Risk Analysis</a></li>
+            <li><a href="{{ url_for('main.reports') }}">Reports</a></li>
+            <li><a href="{{ url_for('main.evidence') }}">Evidence</a></li>
+        </ul>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

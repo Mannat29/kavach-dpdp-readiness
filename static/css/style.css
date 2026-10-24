@@ -1,0 +1,57 @@
+/* Kavach styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #f5f5f5;
+    color: #222;
+}
+
+nav {
+    background: #1a1a2e;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    gap: 2rem;
+}
+
+.nav-brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: 0.75rem 0;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 0.25rem;
+}
+
+nav a {
+    color: #ccc;
+    text-decoration: none;
+    padding: 0.75rem 0.75rem;
+    display: block;
+    font-size: 0.875rem;
+}
+
+nav a:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+}
+
+main {
+    max-width: 960px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+h1 {
+    margin-bottom: 1rem;
+}
