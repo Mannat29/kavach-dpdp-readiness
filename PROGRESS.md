@@ -59,4 +59,11 @@
   - Added `pillow>=10.0`, `pymupdf>=1.23`, `pytesseract>=0.3.10` under `# optional: OCR` in `requirements.txt`.
   - Full test suite: 220 passed, 1 skipped.
 
+- SLM module replacement from teammate's _incoming/:
+  - Replaced `app/slm.py` with `_incoming/slm_nehar.py`, removing `pydantic` imports and `ModelOutput` class in favor of pure Python dict/list parsing and validation in `scan_chunk()`.
+  - Replaced `tests/test_slm.py` with `_incoming/test_slm_nehar.py` (43 unit tests).
+  - Deleted `contrib/slm_grounding/`.
+  - Verified no disallowed dependencies (`fastapi`, `sqlalchemy`, `pydantic`, `pandas`, `backend.`) in `app/`.
+  - Test suites passing: `tests/test_slm.py` (43 passed), full test suite (228 passed).
+
 
