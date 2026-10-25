@@ -23,3 +23,10 @@
   - Integrated `purposes.json` into evidence pack export (`app/ledger.py`) with manifest hashing.
   - Added full test suite in `tests/test_purposes.py` covering all 7 requirement areas.
 
+- Flaky test fix in tests/test_ledger.py:
+  - Diagnosed false positive in `test_no_raw_identifier_appears_anywhere_in_pack`: 10-digit numeric run inside 64-hex SHA-256 digest in `manifest.json` matched `_PHONE_RE`.
+  - Stripped `\b[0-9a-f]{64}\b` digests before `detect_all()` scan in `test_no_raw_identifier_appears_anywhere_in_pack`.
+  - Added `test_positive_control_hex_stripping_preserves_phone_detection()` to ensure genuine PII detection remains robust.
+  - Full test suite passing (209 passed, 1 skipped).
+
+

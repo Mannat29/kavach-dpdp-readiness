@@ -3,6 +3,7 @@ import io
 import json
 import os
 import random
+import re
 import zipfile
 import pytest
 
@@ -274,8 +275,21 @@ def test_no_raw_identifier_appears_anywhere_in_pack(app_with_demo):
         with zipfile.ZipFile(pack["path"], "r") as zf:
             for name in zf.namelist():
                 content = zf.read(name).decode("utf-8", errors="replace")
-                findings = detect_all(content, source=name, location="pack", meta={})
+                # Remove 64-character hex digests (SHA-256) because pseudo-random hex strings
+                # can coincidentally contain 10-digit runs that match phone number patterns.
+                content_cleaned = re.sub(r"\b[0-9a-f]{64}\b", "", content)
+                findings = detect_all(content_cleaned, source=name, location="pack", meta={})
                 assert len(findings) == 0, f"Raw identifiers found in {name}: {[f['category'] for f in findings]}"
+
+
+def test_positive_control_hex_stripping_preserves_phone_detection():
+    """Positive control: stripping 64-hex digests does not hide actual raw phone numbers."""
+    fake_sha256 = "a" * 64
+    sample_text = f'{{"file_hash": "{fake_sha256}", "phone": "9876543210"}}'
+    cleaned = re.sub(r"\b[0-9a-f]{64}\b", "", sample_text)
+    findings = detect_all(cleaned, source="positive_control", location="test", meta={})
+    assert len(findings) == 1
+    assert findings[0]["category"] == "phone"
 
 
 def test_verify_page_renders_without_personal_data_and_shows_tampering(client, app_with_demo):
