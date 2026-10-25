@@ -1,0 +1,32 @@
+﻿# Clinic preset: suggested purposes per column category and segment (hints only, unverified)
+# Source: teammate Nehar (SLM_Backend), copied into Kavach
+patient:
+  phone: [appointment_booking]
+  email: [appointment_booking]
+  name: [appointment_booking, medical_care]
+  dob: [medical_care]
+  health: [medical_care]
+  aadhaar: [medical_care]
+  pan: [billing_payment]
+  address: [appointment_booking]
+  other: []
+customer:
+  phone: [billing_payment]
+  email: [billing_payment]
+  name: [billing_payment]
+  dob: [billing_payment]
+  health: [billing_payment]
+  aadhaar: [tax_records]
+  pan: [tax_records]
+  address: [billing_payment]
+  other: []
+staff:
+  phone: [employment_payroll]
+  email: [employment_payroll]
+  name: [employment_payroll]
+  dob: [employment_payroll]
+  health: [employment_payroll]
+  aadhaar: [employment_payroll]
+  pan: [employment_payroll, tax_records]
+  address: [employment_payroll]
+  other: []
