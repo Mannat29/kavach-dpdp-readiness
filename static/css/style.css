@@ -340,6 +340,102 @@ html.no-webgl body {
     flex-shrink: 0;
 }
 
+/* -----------------------------------------------------------------------
+   Overflow Nav (⋯ more pages dropdown)
+   ----------------------------------------------------------------------- */
+.nav-overflow {
+    position: relative;
+    flex-shrink: 0;
+    margin-left: 0.15rem;
+}
+
+.nav-overflow-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.75rem;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+
+.nav-overflow-btn:hover,
+.nav-overflow-btn[aria-expanded="true"] {
+    color: #111827;
+    background: #f3f4f6;
+}
+
+.nav-overflow-active {
+    color: #111827 !important;
+    background: #111827 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.nav-overflow-dots {
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+    line-height: 1;
+}
+
+.nav-overflow-label {
+    font-size: 0.86rem;
+}
+
+.nav-overflow-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 180px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+    list-style: none;
+    padding: 0.35rem;
+    z-index: 200;
+    animation: nav-dropdown-in 0.14s ease;
+}
+
+.nav-overflow-menu.open {
+    display: block;
+}
+
+@keyframes nav-dropdown-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.nav-overflow-item {
+    display: block;
+    padding: 0.5rem 0.9rem;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #374151;
+    text-decoration: none;
+    transition: background 0.13s ease, color 0.13s ease;
+}
+
+.nav-overflow-item:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.nav-overflow-item.active {
+    background: #111827;
+    color: #ffffff;
+    font-weight: 600;
+}
+
 .btn-reset-demo {
     background: #fef2f2;
     color: #991b1b;

@@ -20,7 +20,8 @@
                 <span class="brand-badge">DPDP 2023 / 2025</span>
             </div>
             <nav class="main-nav" aria-label="Primary Navigation">
-                <ul class="nav-list">
+                <!-- Primary nav: first 4 links always visible -->
+                <ul class="nav-list" id="nav-primary">
                     {% if 'Dashboard' in enabled_pages %}
                     <li><a href="{{ url_for('main.dashboard') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" {% if active_page == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a></li>
                     {% endif %}
@@ -33,22 +34,37 @@
                     {% if 'Purposes' in enabled_pages %}
                     <li><a href="{{ url_for('main.purposes') }}" class="nav-link {% if active_page == 'purposes' %}active{% endif %}" {% if active_page == 'purposes' %}aria-current="page"{% endif %}>Purposes</a></li>
                     {% endif %}
-                    {% if 'Rights Desk' in enabled_pages %}
-                    <li><a href="{{ url_for('main.rights_desk') }}" class="nav-link {% if active_page == 'rights_desk' %}active{% endif %}" {% if active_page == 'rights_desk' %}aria-current="page"{% endif %}>Rights Desk</a></li>
-                    {% endif %}
-                    {% if 'Breach Simulator' in enabled_pages %}
-                    <li><a href="{{ url_for('main.breach_simulator') }}" class="nav-link {% if active_page == 'breach_simulator' %}active{% endif %}" {% if active_page == 'breach_simulator' %}aria-current="page"{% endif %}>Breach Simulator</a></li>
-                    {% endif %}
-                    {% if 'Risk Analysis' in enabled_pages %}
-                    <li><a href="{{ url_for('main.risk_analysis') }}" class="nav-link {% if active_page == 'risk_analysis' %}active{% endif %}" {% if active_page == 'risk_analysis' %}aria-current="page"{% endif %}>Risk Analysis</a></li>
-                    {% endif %}
-                    {% if 'Reports' in enabled_pages %}
-                    <li><a href="{{ url_for('main.reports') }}" class="nav-link {% if active_page == 'reports' %}active{% endif %}" {% if active_page == 'reports' %}aria-current="page"{% endif %}>Reports</a></li>
-                    {% endif %}
-                    {% if 'Evidence' in enabled_pages %}
-                    <li><a href="{{ url_for('main.evidence') }}" class="nav-link {% if active_page == 'evidence' %}active{% endif %}" {% if active_page == 'evidence' %}aria-current="page"{% endif %}>Evidence</a></li>
-                    {% endif %}
                 </ul>
+
+                <!-- Overflow menu: remaining pages behind a ··· button -->
+                <div class="nav-overflow" id="nav-overflow">
+                    <button type="button" class="nav-overflow-btn {% if active_page in ['rights_desk','breach_simulator','risk_analysis','reports','evidence'] %}nav-overflow-active{% endif %}" id="nav-overflow-btn" aria-haspopup="true" aria-expanded="false" aria-label="More pages">
+                        <span class="nav-overflow-dots">&#8943;</span>
+                        {% if active_page == 'rights_desk' %}<span class="nav-overflow-label">Rights Desk</span>
+                        {% elif active_page == 'breach_simulator' %}<span class="nav-overflow-label">Breach Simulator</span>
+                        {% elif active_page == 'risk_analysis' %}<span class="nav-overflow-label">Risk Analysis</span>
+                        {% elif active_page == 'reports' %}<span class="nav-overflow-label">Reports</span>
+                        {% elif active_page == 'evidence' %}<span class="nav-overflow-label">Evidence</span>
+                        {% endif %}
+                    </button>
+                    <ul class="nav-overflow-menu" id="nav-overflow-menu" role="menu" aria-label="More navigation links">
+                        {% if 'Rights Desk' in enabled_pages %}
+                        <li role="none"><a href="{{ url_for('main.rights_desk') }}" class="nav-overflow-item {% if active_page == 'rights_desk' %}active{% endif %}" role="menuitem">Rights Desk</a></li>
+                        {% endif %}
+                        {% if 'Breach Simulator' in enabled_pages %}
+                        <li role="none"><a href="{{ url_for('main.breach_simulator') }}" class="nav-overflow-item {% if active_page == 'breach_simulator' %}active{% endif %}" role="menuitem">Breach Simulator</a></li>
+                        {% endif %}
+                        {% if 'Risk Analysis' in enabled_pages %}
+                        <li role="none"><a href="{{ url_for('main.risk_analysis') }}" class="nav-overflow-item {% if active_page == 'risk_analysis' %}active{% endif %}" role="menuitem">Risk Analysis</a></li>
+                        {% endif %}
+                        {% if 'Reports' in enabled_pages %}
+                        <li role="none"><a href="{{ url_for('main.reports') }}" class="nav-overflow-item {% if active_page == 'reports' %}active{% endif %}" role="menuitem">Reports</a></li>
+                        {% endif %}
+                        {% if 'Evidence' in enabled_pages %}
+                        <li role="none"><a href="{{ url_for('main.evidence') }}" class="nav-overflow-item {% if active_page == 'evidence' %}active{% endif %}" role="menuitem">Evidence</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
             </nav>
             <div class="header-actions">
                 <button type="button" id="btn-reset-demo" class="btn btn-sm btn-reset-demo" title="Reset all demo data and start with an empty database" aria-label="Reset demo data">
@@ -80,5 +96,26 @@
     <script src="{{ url_for('static', filename='js/neural-bg.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/legal-scroll.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+    // Overflow nav dropdown toggle
+    (function () {
+        var btn = document.getElementById('nav-overflow-btn');
+        var menu = document.getElementById('nav-overflow-menu');
+        if (!btn || !menu) return;
+        function closeMenu() {
+            menu.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+        }
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var isOpen = menu.classList.toggle('open');
+            btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+        document.addEventListener('click', closeMenu);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeMenu();
+        });
+    })();
+    </script>
 </body>
 </html>
