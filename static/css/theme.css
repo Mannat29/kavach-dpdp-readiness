@@ -1,0 +1,95 @@
+/* Kavach Design System Tokens – Official Legal Theme */
+:root {
+  /* ---- Page & Surfaces ---- */
+  --bg-page: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.94);
+  --bg-card-hover: #ffffff;
+  --bg-surface: #f8fafc;
+  --bg-surface-alt: #f1f5f9;
+  --bg-surface-elevated: #ffffff;
+
+  /* ---- Text (WCAG AA on light legal theme) ---- */
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --text-dim: #9ca3af;
+  --text-on-dark: #374151;
+  --text-heading-dark: #111827;
+
+  /* ---- Official Legal Accents ---- */
+  --primary: #111827;
+  --primary-hover: #1f2937;
+  --primary-light: #f3f4f6;
+  --primary-contrast: #ffffff;
+  --accent-gold: #b4833e;
+  --accent-gold-light: #fbf5eb;
+  --accent-blue: #2563eb;
+
+  /* ---- Header ---- */
+  --header-bg: rgba(255, 255, 255, 0.92);
+  --brand-navy: #111827;
+
+  /* ---- Banner ---- */
+  --banner-bg: #f8fafc;
+  --banner-border: #e2e8f0;
+
+  /* ---- Severity (Semantic, official light badges, WCAG AA) ---- */
+  --sev-crit-bg: #fef2f2;
+  --sev-crit-text: #991b1b;
+  --sev-crit-border: #fca5a5;
+
+  --sev-high-bg: #fff7ed;
+  --sev-high-text: #9a3412;
+  --sev-high-border: #fdba74;
+
+  --sev-med-bg: #fefce8;
+  --sev-med-text: #854d0e;
+  --sev-med-border: #fde047;
+
+  --sev-low-bg: #eff6ff;
+  --sev-low-text: #1e40af;
+  --sev-low-border: #93c5fd;
+
+  --sev-ok-bg: #f0fdf4;
+  --sev-ok-text: #166534;
+  --sev-ok-border: #86efac;
+
+  /* ---- Spacing ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* ---- Radius (Matching screenshots) ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 9999px;
+
+  /* ---- Shadow & Elevation ---- */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-card-hover: 0 12px 36px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.03);
+
+  /* ---- Typography ---- */
+  --font-sans: Inter, "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --lh-body: 1.6;
+  --lh-tight: 1.15;
+  --tracking-tight: -0.03em;
+
+  /* ---- Focus Indicator ---- */
+  --focus-ring: #111827;
+  --focus-ring-dark: #374151;
+
+  /* ---- Borders ---- */
+  --border-color: #e5e7eb;
+  --border-light: #f3f4f6;
+}

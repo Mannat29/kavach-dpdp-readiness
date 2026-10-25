@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Kavach – DPDP Readiness{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block head_extra %}{% endblock %}
 </head>
 <body>
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
     <header class="app-header">
         <div class="header-inner">
             <div class="brand-group">
@@ -71,6 +73,9 @@
     </footer>
 
     {% block scripts_extra %}{% endblock %}
+    <script src="{{ url_for('static', filename='vendor/three.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/neural-bg.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/legal-scroll.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

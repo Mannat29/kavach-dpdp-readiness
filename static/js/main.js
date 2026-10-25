@@ -750,6 +750,14 @@ function initDataMap() {
     const viewSources = document.getElementById("view-mode-sources");
     const viewPerson = document.getElementById("view-mode-person");
 
+    // Clean mode buttons: replace raw emojis with vector SVG icons
+    if (btnModeSources) {
+        btnModeSources.innerHTML = '<span class="mode-icon mode-icon-sources" aria-hidden="true"></span> Sources &rarr; Categories';
+    }
+    if (btnModePerson) {
+        btnModePerson.innerHTML = '<span class="mode-icon mode-icon-person" aria-hidden="true"></span> Person View (Entity Resolution)';
+    }
+
     const personSelect = document.getElementById("person-select");
     const personSearch = document.getElementById("person-search-input");
 
@@ -983,7 +991,7 @@ function renderSourcesGraph(sources, findingsData) {
                     "curve-style": "bezier",
                     "opacity": 0.85,
                     "label": "data(label)",
-                    "font-size": "11px",
+                    "font-size": "12px",
                     "color": "#334155",
                     "text-background-opacity": 0.8,
                     "text-background-color": "#ffffff",
@@ -1219,7 +1227,7 @@ function renderPersonGraph(person) {
                     "text-halign": "center",
                     "text-wrap": "wrap",
                     "text-max-width": "130px",
-                    "font-size": "11px",
+                    "font-size": "12px",
                     "width": "150px",
                     "height": "65px",
                     "border-width": 2,
@@ -1238,7 +1246,7 @@ function renderPersonGraph(person) {
                     "text-halign": "center",
                     "text-wrap": "wrap",
                     "text-max-width": "140px",
-                    "font-size": "11px",
+                    "font-size": "12px",
                     "font-weight": "bold",
                     "width": "160px",
                     "height": "70px",
@@ -1258,7 +1266,7 @@ function renderPersonGraph(person) {
                     "target-arrow-shape": "triangle",
                     "curve-style": "bezier",
                     "label": "data(label)",
-                    "font-size": "10px",
+                    "font-size": "12px",
                     "color": "#1e3a8a",
                     "text-background-opacity": 0.8,
                     "text-background-color": "#ffffff",
@@ -1276,7 +1284,7 @@ function renderPersonGraph(person) {
                     "target-arrow-shape": "triangle",
                     "curve-style": "bezier",
                     "label": "data(label)",
-                    "font-size": "10px",
+                    "font-size": "12px",
                     "color": "#9333ea",
                     "text-background-opacity": 0.8,
                     "text-background-color": "#ffffff",

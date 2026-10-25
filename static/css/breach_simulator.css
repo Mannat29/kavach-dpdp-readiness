@@ -1,53 +1,74 @@
+@import "theme.css";
+
 /**
- * Breach Simulator Styles – Kavach DPDP Readiness
+ * Breach Simulator Styles – Official Legal Theme
  */
 
 /* ==========================================================================
    Banners
    ========================================================================== */
 
+/* Prominent SIMULATION banner */
 .simulation-banner {
     background: #fef2f2;
     border: 2px solid #ef4444;
     color: #991b1b;
-    padding: 0.85rem 1.25rem;
-    border-radius: var(--radius-md, 6px);
-    font-size: 0.95rem;
+    padding: 0.95rem 1.4rem;
+    border-radius: var(--radius-lg);
+    font-size: 0.94rem;
+    font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 0.65rem;
-    margin-bottom: 0.75rem;
-    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.15);
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.12);
 }
 
 .simulation-banner .simulation-icon {
-    font-size: 1.25rem;
+    font-size: 0 !important;
+    color: transparent !important;
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dc2626' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'/%3E%3Cline x1='12' y1='9' x2='12' y2='13'/%3E%3Cline x1='12' y1='17' x2='12.01' y2='17'/%3E%3C/svg%3E") center / contain no-repeat;
+    vertical-align: middle;
     flex-shrink: 0;
 }
 
 .bs-legal-banner {
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    color: #475569;
-    padding: 0.65rem 1rem;
-    border-radius: var(--radius-md, 6px);
-    font-size: 0.825rem;
+    background: var(--banner-bg);
+    border: 1px solid var(--banner-border);
+    color: #4b5563;
+    padding: 0.65rem 1.25rem;
+    border-radius: var(--radius-lg);
+    font-size: 0.82rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
+    gap: 0.65rem;
+    margin-bottom: 1.75rem;
+}
+
+.bs-legal-banner .bs-legal-icon {
+    font-size: 0 !important;
+    color: transparent !important;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='12'/%3E%3Cline x1='12' y1='16' x2='12.01' y2='16'/%3E%3C/svg%3E") center / contain no-repeat;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
 
 .card-error-banner {
     background: #fef2f2;
     border: 1px solid #f87171;
-    color: #b91c1c;
+    color: #991b1b;
     padding: 0.85rem 1.25rem;
     margin-bottom: 1.25rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-radius: var(--radius-md, 6px);
+    border-radius: var(--radius-md);
 }
 
 /* ==========================================================================
@@ -55,728 +76,274 @@
    ========================================================================== */
 
 .controls-card {
-    margin-bottom: 1.75rem;
+    margin-bottom: 2rem;
 }
 
 .section-title {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: var(--text-main, #1e293b);
-    margin-bottom: 0.5rem;
+    color: #111827;
+    margin-bottom: 0.65rem;
+    letter-spacing: -0.02em;
 }
 
 .form-section {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
 }
 
 .form-section-label {
     display: block;
     font-size: 0.95rem;
-    color: var(--text-main, #1e293b);
-    margin-bottom: 0.75rem;
+    color: #111827;
+    margin-bottom: 0.85rem;
+    font-weight: 600;
 }
 
 /* Scenario Cards Radio Grid */
 .scenario-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 0.85rem;
-    margin-bottom: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.15rem;
+    margin-bottom: 1.25rem;
 }
 
 .scenario-card-label {
     display: block;
     position: relative;
     cursor: pointer;
-    border: 2px solid var(--border-color, #e2e8f0);
-    border-radius: var(--radius-md, 8px);
-    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
     background: #ffffff;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
 }
 
 .scenario-card-label:hover {
-    border-color: #93c5fd;
-    background: #f8fafc;
+    border-color: #111827;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .scenario-card-label.selected {
-    border-color: #2563eb;
-    background: #eff6ff;
-    box-shadow: 0 0 0 1px #2563eb;
+    border-color: #111827;
+    background: #f8fafc;
+    box-shadow: 0 0 0 2px #111827;
 }
 
 .scenario-card-label:focus-within {
-    outline: 2px solid #2563eb;
+    outline: 2px solid #111827;
     outline-offset: 2px;
 }
 
 .scenario-radio-input {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    accent-color: #2563eb;
-    width: 1.1rem;
-    height: 1.1rem;
+    top: 1.25rem;
+    right: 1.25rem;
+    accent-color: #111827;
+    width: 1.15rem;
+    height: 1.15rem;
     cursor: pointer;
 }
 
 .scenario-card-title {
-    font-size: 0.95rem;
+    font-size: 0.96rem;
     font-weight: 700;
-    color: #1e293b;
-    margin-right: 1.5rem;
-    margin-bottom: 0.35rem;
+    color: #111827;
+    margin-right: 1.75rem;
+    margin-bottom: 0.4rem;
     display: block;
 }
 
 .scenario-card-desc {
-    font-size: 0.8rem;
-    color: #64748b;
-    line-height: 1.4;
+    font-size: 0.84rem;
+    color: #6b7280;
+    line-height: 1.5;
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .scenario-card-sources {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3rem;
+    gap: 0.35rem;
 }
 
 .scenario-source-tag {
-    font-family: monospace;
-    font-size: 0.7rem;
-    background: #e2e8f0;
-    color: #334155;
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.74rem;
+    background: #f1f5f9;
+    color: #374151;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid #e2e8f0;
 }
 
 /* Custom Sources Box */
 .custom-sources-panel {
-    background: #f1f5f9;
-    border: 1px dashed #94a3b8;
-    border-radius: var(--radius-md, 6px);
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.25rem;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.45rem;
+    margin-bottom: 1.5rem;
 }
 
 .custom-sources-legend {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     font-weight: 700;
-    color: #1e293b;
+    color: #111827;
     padding: 0 0.5rem;
 }
 
 .custom-sources-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 0.65rem;
-    margin-top: 0.5rem;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
 }
 
 .custom-source-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
     background: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-radius: 4px;
-    padding: 0.45rem 0.65rem;
+    border: 1px solid #e5e7eb;
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.85rem;
     font-size: 0.85rem;
+    color: #111827;
     cursor: pointer;
+    transition: all 0.18s ease;
 }
 
-.custom-source-item:focus-within {
-    outline: 2px solid #2563eb;
+.custom-source-item:hover {
+    border-color: #111827;
 }
 
 .custom-source-checkbox {
-    accent-color: #2563eb;
+    accent-color: #111827;
+    width: 1rem;
+    height: 1rem;
     cursor: pointer;
-}
-
-/* Form Row Params */
-.form-row-params {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-    margin-bottom: 1.5rem;
-}
-
-@media (max-width: 680px) {
-    .form-row-params {
-        grid-template-columns: 1fr;
-    }
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.form-label {
-    font-size: 0.875rem;
-    color: #1e293b;
-}
-
-.form-input, .form-select {
-    padding: 0.55rem 0.75rem;
-    border: 1px solid var(--border-color, #cbd5e1);
-    border-radius: var(--radius-sm, 4px);
-    font-size: 0.9rem;
-    color: var(--text-main, #1e293b);
-    background: #ffffff;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.form-input:focus, .form-select:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-    outline: none;
-}
-
-.form-hint {
-    font-size: 0.75rem;
-    line-height: 1.35;
 }
 
 .form-actions {
     display: flex;
-    justify-content: flex-start;
-    padding-top: 0.5rem;
-}
-
-/* ==========================================================================
-   Results Top Grid: Impact Summary + Clocks
-   ========================================================================== */
-
-.results-top-grid {
-    display: grid;
-    grid-template-columns: 1.3fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.75rem;
-}
-
-@media (max-width: 960px) {
-    .results-top-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-.card-header-flex {
-    display: flex;
-    justify-content: space-between;
+    gap: 0.85rem;
     align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-/* Severity Badges */
-.badge-severity {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.3rem 0.75rem;
-    border-radius: 9999px;
-    font-weight: 700;
-    font-size: 0.825rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-
-.badge-critical {
-    background-color: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #f87171;
-}
-
-.badge-high {
-    background-color: #ffedd5;
-    color: #9a3412;
-    border: 1px solid #fb923c;
-}
-
-.badge-medium {
-    background-color: #fef9c3;
-    color: #854d0e;
-    border: 1px solid #facc15;
-}
-
-.badge-low {
-    background-color: #ecfdf5;
-    color: #065f46;
-    border: 1px solid #6ee7b7;
-}
-
-.severity-disclaimer-line {
-    font-size: 0.825rem;
-    color: #64748b;
-    margin-bottom: 1rem;
-}
-
-/* Big Numbers Row */
-.big-numbers-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-}
-
-.stat-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: var(--radius-md, 6px);
-    padding: 0.85rem 1rem;
-    text-align: left;
-}
-
-.stat-label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: #64748b;
-    margin-bottom: 0.25rem;
-}
-
-.stat-value {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #0f172a;
-    line-height: 1.2;
-    margin-bottom: 0.2rem;
-}
-
-.stat-subtext {
-    display: block;
-    font-size: 0.75rem;
-    color: #94a3b8;
-}
-
-/* Factors List */
-.factors-section {
-    margin-bottom: 1.25rem;
-}
-
-.factors-title {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #334155;
-    margin-bottom: 0.4rem;
-}
-
-.factors-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
-
-.factors-list li {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    font-size: 0.825rem;
-    line-height: 1.4;
-    color: #334155;
-}
-
-.factor-pts {
-    font-family: monospace;
-    font-weight: 700;
-    padding: 0.1rem 0.35rem;
-    border-radius: 3px;
-    font-size: 0.75rem;
-    flex-shrink: 0;
-}
-
-.factor-pts-pos {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.factor-pts-neg {
-    background: #dcfce7;
-    color: #166534;
-}
-
-/* Category Table */
-.category-table-section {
-    margin-top: 1rem;
-}
-
-.category-table-title {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #334155;
-    margin-bottom: 0.4rem;
-}
-
-/* ==========================================================================
-   Statutory Clocks
-   ========================================================================== */
-
-.clocks-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.clock-card {
-    border: 2px solid #e2e8f0;
-    border-radius: var(--radius-md, 8px);
-    padding: 1.1rem;
-    background: #ffffff;
-    transition: all 0.2s ease;
-}
-
-.clock-card-normal {
-    border-color: #38bdf8;
-    background: #f0f9ff;
-}
-
-.clock-card-urgent {
-    border-color: #f59e0b;
-    background: #fffbeb;
-}
-
-.clock-card-critical {
-    border-color: #ef4444;
-    background: #fef2f2;
-}
-
-.clock-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.clock-stage-num {
-    font-size: 0.725rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    background: #0f172a;
-    color: #ffffff;
-    padding: 0.15rem 0.45rem;
-    border-radius: 3px;
-}
-
-.clock-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #0f172a;
-    margin: 0;
-}
-
-.clock-timer-display {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-    font-size: 1.6rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: #0f172a;
-    margin-bottom: 0.25rem;
-}
-
-.clock-status-label {
-    font-size: 0.825rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-.clock-desc {
-    font-size: 0.775rem;
-    line-height: 1.35;
-    margin: 0;
-}
-
-.clock-footer {
-    margin-top: 0.85rem;
-    padding-top: 0.65rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.07);
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-}
-
-/* ==========================================================================
-   Cytoscape Blast-Radius Graph
-   ========================================================================== */
-
-.graph-card {
-    margin-bottom: 1.75rem;
-}
-
-.graph-header-flex {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.75rem;
-}
-
-.graph-legend-bar {
-    display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.6rem 0.85rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    font-size: 0.775rem;
-    color: #475569;
-    margin-bottom: 0.75rem;
-}
-
-.legend-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.legend-box {
-    width: 14px;
-    height: 14px;
-    border-radius: 2px;
-    display: inline-block;
-}
-
-.legend-circle {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.legend-source-affected {
-    background: #b91c1c;
-    border: 1px solid #ef4444;
-}
-
-.legend-source-unaffected {
-    background: #94a3b8;
-    border: 1px solid #cbd5e1;
-}
-
-.legend-cat-high {
-    background: #ea580c;
-    border: 1px solid #f97316;
-}
-
-.legend-cat-std {
-    background: #0284c7;
-    border: 1px solid #38bdf8;
-}
-
-.legend-people-confirmed {
-    background: #059669;
-    border: 1px solid #10b981;
-}
-
-.legend-people-possible {
-    background: #7c3aed;
-    border: 1px dashed #a855f7;
-}
-
-.cy-breach-container {
-    width: 100%;
-    height: 480px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: var(--radius-md, 6px);
+    margin-top: 1.5rem;
 }
 
 /* ==========================================================================
-   First-Hour Checklist
+   Clock Strip
    ========================================================================== */
 
-.checklist-card {
-    margin-bottom: 1.75rem;
-}
-
-.checklist-header-flex {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.checklist-progress-badge {
-    font-size: 0.825rem;
-    font-weight: 700;
-    background: #e2e8f0;
-    color: #334155;
-    padding: 0.3rem 0.75rem;
-    border-radius: 9999px;
-}
-
-.checklist-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-}
-
-.checklist-item {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 0.65rem 0.85rem;
-    transition: background 0.15s ease;
-}
-
-.checklist-item.checked {
-    background: #f0fdf4;
-    border-color: #bbf7d0;
-}
-
-.checklist-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.65rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-    line-height: 1.45;
-    color: #1e293b;
-    margin: 0;
-}
-
-.checklist-checkbox {
-    margin-top: 0.2rem;
-    accent-color: #059669;
-    width: 1.15rem;
-    height: 1.15rem;
-    cursor: pointer;
-}
-
-.checklist-item.checked .checklist-text {
-    text-decoration: line-through;
-    color: #64748b;
-}
-
-/* ==========================================================================
-   Drafts & Recipients Tabs
-   ========================================================================== */
-
-.drafts-card {
+.clock-strip-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
     margin-bottom: 2rem;
 }
 
-.drafts-header-flex {
+.clock-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: var(--radius-xl);
+    padding: 1.4rem 1.6rem;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.clock-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+}
+
+.clock-card-crit { border-left: 4px solid #ef4444; }
+.clock-card-warn { border-left: 4px solid #f59e0b; }
+.clock-card-ok   { border-left: 4px solid #22c55e; }
+
+.clock-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.65rem;
 }
+
+.clock-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.clock-countdown {
+    font-size: 2.3rem;
+    font-weight: 800;
+    color: #111827;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0.25rem 0;
+}
+
+.clock-meta {
+    font-size: 0.82rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   Draft Viewer & Tab Controls
+   ========================================================================== */
 
 .tabs-nav {
     display: flex;
-    border-bottom: 2px solid #e2e8f0;
-    gap: 0.25rem;
-    margin-bottom: 1rem;
+    gap: 0.45rem;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.25rem;
 }
 
 .tab-btn {
     background: transparent;
-    border: none;
-    padding: 0.65rem 1.1rem;
-    font-size: 0.875rem;
+    border: 1px solid transparent;
+    color: #6b7280;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: #64748b;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
+    padding: 0.45rem 1rem;
+    border-radius: var(--radius-pill);
     cursor: pointer;
-    border-radius: 4px 4px 0 0;
     transition: all 0.15s ease;
+    font-family: var(--font-sans);
 }
 
 .tab-btn:hover {
-    color: #1e293b;
+    color: #111827;
     background: #f1f5f9;
 }
 
 .tab-btn.active {
-    color: #2563eb;
-    border-bottom-color: #2563eb;
-    font-weight: 700;
-    background: #eff6ff;
+    color: #ffffff;
+    background: #111827;
 }
 
-.tab-btn:focus-visible {
-    outline: 2px solid #2563eb;
-    outline-offset: -2px;
-}
-
-.panel-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.panel-hint {
-    font-size: 0.8rem;
-}
-
-.placeholder-sample {
-    background-color: #fef08a;
-    color: #854d0e;
-    padding: 0.1rem 0.35rem;
-    border-radius: 3px;
-    font-weight: 700;
-    font-family: monospace;
-}
-
-.placeholder-mark {
-    background-color: #fef08a;
-    color: #854d0e;
-    border: 1px solid #eab308;
-    padding: 0.1rem 0.35rem;
-    border-radius: 3px;
-    font-weight: 700;
-    font-family: monospace;
-    font-size: 0.9em;
-}
-
-.draft-viewer {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 1.25rem;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+.draft-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    padding: 1.35rem;
+    font-family: var(--font-mono);
     font-size: 0.85rem;
+    color: #111827;
     line-height: 1.6;
-    color: #1e293b;
     white-space: pre-wrap;
-    word-break: break-word;
-    max-height: 520px;
+    max-height: 380px;
     overflow-y: auto;
-}
-
-/* Who to Notify */
-.recipients-section {
-    border-top: 1px solid #e2e8f0;
-    padding-top: 1.25rem;
-}
-
-.recipients-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 0.4rem;
-}
-
-.recipients-note {
-    background: #fffbeb;
-    border: 1px solid #fcd34d;
-    color: #92400e;
-    padding: 0.65rem 0.9rem;
-    border-radius: 4px;
-    font-size: 0.825rem;
 }
