@@ -45,15 +45,17 @@ def test_salt_file_fallback(monkeypatch, tmp_path):
 # 2. Input Safety: Upload tests
 # ---------------------------------------------------------------------------
 def test_upload_bad_extension(test_client):
-    """Reject unsupported file extensions (e.g. .pdf, .exe, .json)."""
+    """Reject unsupported file extensions (e.g. .exe, .json).
+    Note: .pdf is now valid when OCR is available; use .exe which is always rejected.
+    """
     data = {
-        "files": (io.BytesIO(b"%PDF-1.4 header"), "document.pdf")
+        "files": (io.BytesIO(b"MZ\x90\x00this-is-a-fake-exe"), "malware.exe")
     }
     resp = test_client.post("/api/upload", data=data, content_type="multipart/form-data")
     assert resp.status_code == 400
     res = resp.get_json()
     assert "error" in res
-    assert "Unsupported file extension" in res["error"] or "Only .xlsx, .csv, and .txt" in res["error"]
+    assert "Unsupported file extension" in res["error"] or "Only .xlsx" in res["error"]
 
 
 def test_upload_empty_file(test_client):

@@ -11,6 +11,15 @@ MAX_ROWS = 50_000
 ALLOWED_EXTENSIONS = {".xlsx", ".csv", ".txt"}
 
 
+def get_allowed_extensions() -> set:
+    """Return set of allowed file extensions, including OCR formats if available."""
+    from app.ocr import ocr_available
+    exts = {".xlsx", ".csv", ".txt"}
+    if ocr_available().get("available"):
+        exts.update({".pdf", ".png", ".jpg", ".jpeg"})
+    return exts
+
+
 def read_source(path: str, max_rows: int = MAX_ROWS):
     """Yield (location, text, metadata) tuples from a file.
 
@@ -18,8 +27,9 @@ def read_source(path: str, max_rows: int = MAX_ROWS):
       - xlsx: "SheetName/R{row}/C{col}"
       - csv:  "R{row}/C{col}"
       - txt (WhatsApp): "line {n}"
+      - pdf/png/jpg/jpeg: "page {n}"
 
-    metadata is a dict with optional keys: header, sender, row, col.
+    metadata is a dict with optional keys: header, sender, row, col, method, page, low_confidence.
     """
     if not os.path.exists(path):
         raise FileNotFoundError(f"File not found: {path}")
@@ -38,8 +48,19 @@ def read_source(path: str, max_rows: int = MAX_ROWS):
         yield from _read_csv(path, max_rows=max_rows)
     elif ext == ".txt":
         yield from _read_txt(path, max_rows=max_rows)
+    elif ext in {".pdf", ".png", ".jpg", ".jpeg"}:
+        from app.ocr import ocr_available, read_ocr_document
+        avail = ocr_available()
+        if not avail.get("available"):
+            raise ValueError(f"OCR unavailable: {avail.get('reason', 'Dependencies or Tesseract missing')}")
+        yield from read_ocr_document(path)
     else:
-        raise ValueError(f"Unsupported file type: '{ext}'. Only .xlsx, .csv, and .txt files are accepted.")
+        from app.ocr import ocr_available
+        avail = ocr_available()
+        if avail.get("available"):
+            raise ValueError(f"Unsupported file type: '{ext}'. Only .csv, .jpeg, .jpg, .pdf, .png, .txt, and .xlsx files are accepted.")
+        else:
+            raise ValueError(f"Unsupported file type: '{ext}'. Only .xlsx, .csv, and .txt files are accepted.")
 
 
 def _read_xlsx(path: str, max_rows: int = MAX_ROWS):

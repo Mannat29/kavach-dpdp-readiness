@@ -16,3 +16,5 @@ data/.salt
 *.egg-info/
 .pytest_cache/
 .snapshot/
+
+_incoming/

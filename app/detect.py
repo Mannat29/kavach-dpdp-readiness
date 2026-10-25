@@ -454,6 +454,11 @@ def detect_all(text: str, source: str, location: str, meta: dict) -> List[Dict]:
     findings = []
     for detector in ALL_DETECTORS:
         findings.extend(detector(text, source, location, meta))
+    if meta and meta.get("low_confidence"):
+        for f in findings:
+            if "meta" not in f or f["meta"] is None:
+                f["meta"] = {}
+            f["meta"]["low_confidence"] = True
     return findings
 
 

@@ -29,7 +29,9 @@ bp = Blueprint("main", __name__)
 @bp.route("/")
 @bp.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html", active_page="dashboard")
+    from app.ocr import ocr_available
+    is_ocr = ocr_available().get("available", False)
+    return render_template("dashboard.html", active_page="dashboard", ocr_available=is_ocr)
 
 
 @bp.route("/scanner")
@@ -108,11 +110,18 @@ def api_upload():
         if not safe_name or safe_name in (".", ".."):
             return jsonify({"error": f"Invalid filename: '{f.filename}'."}), 400
 
-        # Extension whitelist: only .xlsx, .csv, .txt
+        # Extension whitelist: only .xlsx, .csv, .txt (plus OCR formats if available)
+        from app.ingest import get_allowed_extensions
+        from app.ocr import ocr_available
+        allowed = get_allowed_extensions()
         ext = os.path.splitext(safe_name)[1].lower()
-        if ext not in ALLOWED_EXTENSIONS:
+        if ext not in allowed:
+            if ocr_available().get("available"):
+                msg = "Only .csv, .jpeg, .jpg, .pdf, .png, .txt, and .xlsx files are accepted."
+            else:
+                msg = "Only .xlsx, .csv, and .txt files are accepted."
             return jsonify({
-                "error": f"Unsupported file extension '{ext}' for file '{safe_name}'. Only .xlsx, .csv, and .txt files are accepted."
+                "error": f"Unsupported file extension '{ext}' for file '{safe_name}'. {msg}"
             }), 400
 
         # Upload size check per file

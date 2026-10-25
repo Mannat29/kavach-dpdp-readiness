@@ -146,8 +146,16 @@ def run_entity_resolution(conn=None):
         for f in f_list:
             cat = f["category"]
             v_hash = f["value_hash"]
+            meta = {}
+            if f["meta_json"]:
+                try:
+                    meta = json.loads(f["meta_json"])
+                except Exception:
+                    pass
+            is_low_conf = bool(meta.get("low_confidence", False))
             if cat in {"phone", "email", "aadhaar"}:
-                strong_to_records[(cat, v_hash)].add(rec_id)
+                if not is_low_conf:
+                    strong_to_records[(cat, v_hash)].add(rec_id)
             elif cat == "name":
                 name_to_records[v_hash].add(rec_id)
                 if rec_id not in record_name_hint:

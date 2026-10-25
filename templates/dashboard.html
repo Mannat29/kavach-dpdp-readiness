@@ -19,7 +19,7 @@
     <!-- Upload Dropzone -->
     <section class="card upload-card" aria-label="File Ingestion">
         <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload files: Drag and drop or activate to browse files">
-            <input type="file" id="file-input" multiple accept=".csv,.xlsx,.txt" class="visually-hidden" aria-label="Upload data files">
+            <input type="file" id="file-input" multiple accept="{% if ocr_available %}.csv,.xlsx,.txt,.pdf,.png,.jpg,.jpeg{% else %}.csv,.xlsx,.txt{% endif %}" class="visually-hidden" aria-label="Upload data files">
             <div class="dropzone-content">
                 <div class="dropzone-icon" aria-hidden="true">&#x1F4C2;</div>
                 <div class="dropzone-text">

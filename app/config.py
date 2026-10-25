@@ -33,4 +33,13 @@ REPORTED_ACCURACY = {
     "note": "Detector accuracy evaluated on held-out synthetic test data.",
 }
 
+# OCR & Scanned Document Configuration
+OCR_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+OCR_MAX_PAGES = 50
+OCR_MIN_NATIVE_CHARS = 50
+OCR_MIN_NATIVE_WORDS = 5
+OCR_DEFAULT_LANGUAGE = "eng"
+OCR_TIMEOUT_SECONDS = 30
+TESSERACT_WINDOWS_DEFAULT = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
 

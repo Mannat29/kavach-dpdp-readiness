@@ -46,4 +46,17 @@
   - `rules.yaml`: `aadhaar_in_chat` citation_hint updated to "s.8(5) safeguards; best practice (Aadhaar-specific rules are outside the DPDP Act)"; `breach_contact_process` updated to "s.8(6) breach intimation; s.8(9) contact point".
   - Full test suite passing: 213 passed, 1 skipped.
 
+- Optional scanned-document ingest (OCR) — adapted from Nehar's _incoming/ocr_engine.py:
+  - Created `app/ocr.py`: magic-byte format sniffing, size/page limits, encrypted/malformed PDF handling, native PDF text first (OCR only when insufficient), dark-image preprocessing, Tesseract path resolution (TESSERACT_CMD env, PATH, Windows default `C:\Program Files\Tesseract-OCR\tesseract.exe`), mockable OCR runner, `ocr_available()`, non-Latin OCR tagged `low_confidence`.
+  - Added OCR constants to `app/config.py` (max file size, max pages, min native chars/words, default language "eng", Tesseract Windows default path).
+  - Updated `app/ingest.py`: `get_allowed_extensions()` dynamically adds `.pdf/.png/.jpg/.jpeg` when OCR is available; `read_source()` handles OCR formats with `ValueError("OCR unavailable: <reason>")` guard.
+  - Updated `app/routes.py` and `templates/dashboard.html`: dashboard passes `ocr_available` flag; file-picker accept attribute and error messages adapt dynamically.
+  - Updated `app/inventory.py`: `run_entity_resolution()` skips `low_confidence` OCR findings for strong entity links; fixed `f.get("meta_json")` → `f["meta_json"]` (sqlite3.Row incompatibility).
+  - Created `scripts/make_ocr_sample.py` and `data/demo_ocr/clinic_slip.png` with synthetic phone and Verhoeff-valid Aadhaar-format number. No real data.
+  - Created `tests/test_ocr.py` (7 tests): native PDF skips OCR, image triggers OCR, corrupt file rejected, unavailable message, no raw PII stored, non-Latin tagged low_confidence, real-Tesseract smoke test (skipif unavailable).
+  - Added `pytest.ini` with `testpaths = tests` to exclude `_incoming/test_ocr_ingestion.py` (requires uninstalled `backend` module).
+  - Updated `tests/test_hardening.py::test_upload_bad_extension`: swapped `.pdf` (now a valid OCR extension) for `.exe` (always rejected), preserving the test's intent.
+  - Added `pillow>=10.0`, `pymupdf>=1.23`, `pytesseract>=0.3.10` under `# optional: OCR` in `requirements.txt`.
+  - Full test suite: 220 passed, 1 skipped.
+
 
