@@ -107,3 +107,16 @@ CREATE TABLE IF NOT EXISTS breach_simulations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS purpose_answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_id INTEGER,
+    field_header TEXT,
+    category TEXT,
+    segment TEXT,
+    purpose_id TEXT NULL,
+    status TEXT CHECK(status IN ('confirmed', 'unknown')),
+    answered_by TEXT,
+    answered_at TEXT,
+    superseded_by INTEGER NULL
+);
+

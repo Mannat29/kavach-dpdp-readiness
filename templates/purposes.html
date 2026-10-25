@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}Purpose Mapping – Kavach{% endblock %}
+
+{% block content %}
+<div class="page-container purposes-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Purpose Mapping</h1>
+            <p class="page-subtitle">Purpose limitation readiness: document lawful processing purposes for personal data fields across ingested stores.</p>
+        </div>
+    </div>
+
+    <!-- Progress Card -->
+    <section class="card mb-4" aria-label="Purpose Mapping Progress">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <div>
+                <h2 class="card-title" style="margin: 0; font-size: 1.15rem;">Purpose Documentation Progress</h2>
+                <p class="card-subtitle" style="margin: 0.25rem 0 0 0;" id="purpose-progress-text">Loading open questions...</p>
+            </div>
+            <div id="purpose-progress-percent" style="font-size: 1.25rem; font-weight: 700; color: var(--accent-primary, #6366f1);">
+                --%
+            </div>
+        </div>
+        <div style="background: rgba(255, 255, 255, 0.08); border-radius: 9999px; height: 10px; width: 100%; overflow: hidden;">
+            <div id="purpose-progress-bar" style="background: var(--accent-primary, #6366f1); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+        </div>
+        <div style="margin-top: 0.85rem; padding: 0.65rem 0.85rem; background: rgba(99, 102, 241, 0.08); border-left: 3px solid var(--accent-primary, #6366f1); border-radius: 4px; font-size: 0.88rem; color: var(--text-secondary, #94a3b8);">
+            Unanswered means the purpose is not documented; this is a readiness aid, not legal advice.
+        </div>
+    </section>
+
+    <!-- Questions Container -->
+    <section aria-label="Open Purpose Questions">
+        <div id="questions-loading" class="card p-4 text-center text-muted">
+            Loading purpose questions...
+        </div>
+        <div id="questions-empty" class="card p-4 text-center" style="display: none;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--text-primary, #fff);">All Purposes Documented</h3>
+            <p class="text-muted" style="margin: 0;">Every detected personal data field has a documented processing purpose.</p>
+        </div>
+        <div id="questions-list" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+    </section>
+</div>
+
+<style>
+.purpose-card {
+    background: var(--bg-card, #1e293b);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    padding: 1.25rem;
+    transition: border-color 0.2s ease;
+}
+.purpose-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+}
+.purpose-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.purpose-card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary, #f8fafc);
+    margin: 0;
+}
+.purpose-card-meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 0.35rem;
+}
+.purpose-badge {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary, #cbd5e1);
+}
+.purpose-badge-hint {
+    background: rgba(14, 165, 233, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(14, 165, 233, 0.3);
+}
+.purpose-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.6rem;
+    margin: 1rem 0;
+}
+.purpose-option-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.88rem;
+    color: var(--text-primary, #e2e8f0);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.purpose-option-label:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+.purpose-option-label input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--accent-primary, #6366f1);
+}
+.purpose-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    loadQuestions();
+});
+
+function loadQuestions() {
+    const loadingEl = document.getElementById("questions-loading");
+    const emptyEl = document.getElementById("questions-empty");
+    const listEl = document.getElementById("questions-list");
+    const progressText = document.getElementById("purpose-progress-text");
+    const progressBar = document.getElementById("purpose-progress-bar");
+    const progressPercent = document.getElementById("purpose-progress-percent");
+
+    loadingEl.style.display = "block";
+    emptyEl.style.display = "none";
+    listEl.innerHTML = "";
+
+    fetch("/api/purpose-questions")
+        .then(res => res.json())
+        .then(data => {
+            loadingEl.style.display = "none";
+            const progress = data.progress || { answered: 0, total: 0 };
+            const questions = data.questions || [];
+
+            const pct = progress.total > 0 ? Math.round((progress.answered / progress.total) * 100) : 100;
+            progressText.textContent = `${progress.answered} of ${progress.total} fields documented`;
+            progressBar.style.width = `${pct}%`;
+            progressPercent.textContent = `${pct}%`;
+
+            if (questions.length === 0) {
+                emptyEl.style.display = "block";
+                return;
+            }
+
+            questions.forEach((q, idx) => {
+                const card = createQuestionCard(q, idx);
+                listEl.appendChild(card);
+            });
+        })
+        .catch(err => {
+            loadingEl.style.display = "none";
+            loadingEl.textContent = "Error loading questions. Please try again.";
+            loadingEl.style.display = "block";
+        });
+}
+
+function createQuestionCard(q, idx) {
+    const card = document.createElement("div");
+    card.className = "purpose-card";
+    card.id = `purpose-q-${idx}`;
+
+    const hintText = (q.suggested_default && q.suggested_default.length > 0)
+        ? `<span class="purpose-badge purpose-badge-hint" title="Unverified preset hint; not auto-confirmed">Preset hint: ${escapeHtml(q.suggested_default.join(", "))} (unverified)</span>`
+        : "";
+
+    let optionsHtml = "";
+    (q.options || []).forEach(opt => {
+        const isUnknown = opt.id === "unknown";
+        optionsHtml += `
+            <label class="purpose-option-label" data-is-unknown="${isUnknown}">
+                <input type="checkbox" name="purpose_${idx}" value="${escapeHtml(opt.id)}" class="purpose-check-${idx} ${isUnknown ? 'check-unknown' : 'check-purpose'}">
+                <span>${escapeHtml(opt.label)}</span>
+            </label>
+        `;
+    });
+
+    card.innerHTML = `
+        <div class="purpose-card-header">
+            <div>
+                <h3 class="purpose-card-title">${escapeHtml(q.header)} <span style="font-weight: normal; color: var(--text-secondary, #94a3b8); font-size: 0.9rem;">in ${escapeHtml(q.source)}</span></h3>
+                <div class="purpose-card-meta">
+                    <span class="purpose-badge">Category: ${escapeHtml(q.category)}</span>
+                    <span class="purpose-badge">Segment: ${escapeHtml(q.segment)}</span>
+                    <span class="purpose-badge">${q.finding_count} findings</span>
+                    ${hintText}
+                </div>
+            </div>
+        </div>
+        <div class="purpose-options-grid">
+            ${optionsHtml}
+        </div>
+        <div class="purpose-card-actions">
+            <span class="save-status text-muted" style="font-size: 0.85rem;" id="status-${idx}"></span>
+            <button type="button" class="btn btn-primary btn-sm btn-save-purpose" data-idx="${idx}">Save</button>
+        </div>
+    `;
+
+    // Interactivity: clicking "I don't know" unchecks other purposes; clicking a purpose unchecks "I don't know"
+    const checks = card.querySelectorAll(`.purpose-check-${idx}`);
+    const unknownCheck = card.querySelector(`.purpose-check-${idx}.check-unknown`);
+    const purposeChecks = card.querySelectorAll(`.purpose-check-${idx}.check-purpose`);
+
+    if (unknownCheck) {
+        unknownCheck.addEventListener("change", () => {
+            if (unknownCheck.checked) {
+                purposeChecks.forEach(pc => pc.checked = false);
+            }
+        });
+    }
+
+    purposeChecks.forEach(pc => {
+        pc.addEventListener("change", () => {
+            if (pc.checked && unknownCheck) {
+                unknownCheck.checked = false;
+            }
+        });
+    });
+
+    // Save button event
+    const saveBtn = card.querySelector(".btn-save-purpose");
+    const statusEl = card.querySelector(`#status-${idx}`);
+
+    saveBtn.addEventListener("click", () => {
+        const selectedUnknown = unknownCheck && unknownCheck.checked;
+        const selectedPurposes = Array.from(purposeChecks).filter(pc => pc.checked).map(pc => pc.value);
+
+        if (!selectedUnknown && selectedPurposes.length === 0) {
+            statusEl.textContent = "Please select at least one purpose or 'I don't know'.";
+            statusEl.style.color = "#f87171";
+            return;
+        }
+
+        saveBtn.disabled = true;
+        statusEl.textContent = "Saving...";
+        statusEl.style.color = "var(--text-secondary, #94a3b8)";
+
+        fetch("/api/purpose-answers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                source_id: q.source_id,
+                header: q.header,
+                category: q.category,
+                segment: q.segment,
+                purpose_ids: selectedPurposes,
+                unknown: selectedUnknown,
+                answered_by: "user"
+            })
+        })
+        .then(res => res.json().then(d => ({ status: res.status, body: d })))
+        .then(({ status, body }) => {
+            if (status !== 200 || !body.success) {
+                saveBtn.disabled = false;
+                statusEl.textContent = body.error || "Save failed.";
+                statusEl.style.color = "#f87171";
+            } else {
+                statusEl.textContent = "Saved";
+                statusEl.style.color = "#4ade80";
+                setTimeout(() => {
+                    loadQuestions();
+                }, 400);
+            }
+        })
+        .catch(err => {
+            saveBtn.disabled = false;
+            statusEl.textContent = "Network error";
+            statusEl.style.color = "#f87171";
+        });
+    });
+
+    return card;
+}
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+</script>
+{% endblock %}

@@ -74,6 +74,11 @@ def evidence():
     return render_template("evidence.html", active_page="evidence", is_dev=is_dev)
 
 
+@bp.route("/purposes")
+def purposes():
+    return render_template("purposes.html", active_page="purposes")
+
+
 # ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------
@@ -186,8 +191,9 @@ def api_reset():
     cur.execute("DELETE FROM ledger")
     cur.execute("DELETE FROM evidence_packs")
     cur.execute("DELETE FROM ledger_tamper_backup")
+    cur.execute("DELETE FROM purpose_answers")
     try:
-        cur.execute("DELETE FROM sqlite_sequence WHERE name IN ('sources', 'findings', 'people', 'person_records', 'risks', 'rights_requests', 'breach_simulations', 'ledger', 'evidence_packs')")
+        cur.execute("DELETE FROM sqlite_sequence WHERE name IN ('sources', 'findings', 'people', 'person_records', 'risks', 'rights_requests', 'breach_simulations', 'ledger', 'evidence_packs', 'purpose_answers')")
     except Exception:
         pass
     cur.execute("PRAGMA foreign_keys = ON")
@@ -1263,4 +1269,72 @@ def api_reports_export():
     html_content = generate_printable_report_html(summary, conn)
     append_ledger("report_generated", {"report_type": "printable_export"}, conn)
     return Response(html_content, mimetype="text/html; charset=utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Purpose Mapping API
+# ---------------------------------------------------------------------------
+@bp.route("/api/purposes", methods=["GET"])
+def api_purposes():
+    """Return controlled purpose vocabulary."""
+    from app.purposes import load_vocabulary
+    return jsonify(load_vocabulary())
+
+
+@bp.route("/api/purpose-questions", methods=["GET"])
+def api_purpose_questions():
+    """Return open questions for undocumented purposes with progress."""
+    from app.purposes import get_questions
+    conn = get_db()
+    init_db()
+    return jsonify(get_questions(conn))
+
+
+@bp.route("/api/purpose-answers", methods=["POST"])
+def api_purpose_answers():
+    """Record an answer for a field purpose question."""
+    from app.purposes import record_answer
+    conn = get_db()
+    init_db()
+    data = request.get_json(silent=True) or {}
+    source_id = data.get("source_id")
+    header = data.get("header") if "header" in data else data.get("field_header")
+    category = data.get("category")
+    segment = data.get("segment")
+    purpose_ids = data.get("purpose_ids")
+    unknown = bool(data.get("unknown", False))
+    answered_by = data.get("answered_by", "user")
+
+    if source_id is None or header is None or category is None or segment is None:
+        return jsonify({"error": "Missing required fields: source_id, header, category, segment"}), 400
+
+    try:
+        res = record_answer(
+            source_id=int(source_id),
+            header=str(header),
+            category=str(category),
+            segment=str(segment),
+            purpose_ids=purpose_ids,
+            unknown=unknown,
+            answered_by=str(answered_by),
+            conn=conn,
+        )
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@bp.route("/api/purpose-history", methods=["GET"])
+def api_purpose_history():
+    """Return answer history for a field."""
+    from app.purposes import get_history
+    conn = get_db()
+    init_db()
+    source_id = request.args.get("source_id", type=int)
+    header = request.args.get("header") or request.args.get("field_header") or ""
+    category = request.args.get("category", "")
+    if source_id is None:
+        return jsonify({"error": "source_id is required"}), 400
+    history = get_history(source_id, header, category, conn)
+    return jsonify({"history": history})
 

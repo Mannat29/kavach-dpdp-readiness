@@ -6,6 +6,7 @@ ENABLED_PAGES = [
     "Dashboard",
     "Scanner",
     "Data Map",
+    "Purposes",
     "Rights Desk",
     "Breach Simulator",
     "Risk Analysis",

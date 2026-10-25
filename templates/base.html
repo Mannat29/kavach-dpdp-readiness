@@ -30,6 +30,9 @@
                     {% if 'Data Map' in enabled_pages %}
                     <li><a href="{{ url_for('main.data_map') }}" class="nav-link {% if active_page == 'data_map' %}active{% endif %}" {% if active_page == 'data_map' %}aria-current="page"{% endif %}>Data Map</a></li>
                     {% endif %}
+                    {% if 'Purposes' in enabled_pages %}
+                    <li><a href="{{ url_for('main.purposes') }}" class="nav-link {% if active_page == 'purposes' %}active{% endif %}" {% if active_page == 'purposes' %}aria-current="page"{% endif %}>Purposes</a></li>
+                    {% endif %}
                     {% if 'Rights Desk' in enabled_pages %}
                     <li><a href="{{ url_for('main.rights_desk') }}" class="nav-link {% if active_page == 'rights_desk' %}active{% endif %}" {% if active_page == 'rights_desk' %}aria-current="page"{% endif %}>Rights Desk</a></li>
                     {% endif %}

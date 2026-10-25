@@ -420,7 +420,21 @@ def export_evidence_pack(conn: Any = None, base_dir: Optional[str] = None) -> Di
         with open(lim_path, "rb") as f:
             files_to_hash["limitations.md"] = hashlib.sha256(f.read()).hexdigest()
 
-        # 6. erasure receipts (all data/out/*/receipt.json)
+        # 6. purposes.json (active purpose answers)
+        cur.execute(
+            """SELECT id, source_id, field_header, category, segment, purpose_id, status, answered_by, answered_at
+               FROM purpose_answers
+               WHERE superseded_by IS NULL
+               ORDER BY id ASC"""
+        )
+        purposes_rows = [dict(r) for r in cur.fetchall()]
+        purposes_path = os.path.join(tmp_dir, "purposes.json")
+        with open(purposes_path, "w", encoding="utf-8") as f:
+            json.dump(purposes_rows, f, indent=2, ensure_ascii=False)
+        with open(purposes_path, "rb") as f:
+            files_to_hash["purposes.json"] = hashlib.sha256(f.read()).hexdigest()
+
+        # 7. erasure receipts (all data/out/*/receipt.json)
         receipts_dir = os.path.join(tmp_dir, "receipts")
         os.makedirs(receipts_dir, exist_ok=True)
         data_out_dir = os.path.join(base_dir, "data", "out")
@@ -461,6 +475,7 @@ def export_evidence_pack(conn: Any = None, base_dir: Optional[str] = None) -> Di
             zf.write(sims_path, "breach_simulations.json")
             zf.write(inv_path, "inventory_summary.json")
             zf.write(lim_path, "limitations.md")
+            zf.write(purposes_path, "purposes.json")
             if os.path.exists(receipts_dir):
                 for rf in os.listdir(receipts_dir):
                     zf.write(os.path.join(receipts_dir, rf), f"receipts/{rf}")

@@ -40,13 +40,14 @@ def reset_demo():
         "ledger",
         "evidence_packs",
         "ledger_tamper_backup",
+        "purpose_answers",
     ]
     for table in tables:
         cur.execute(f"DELETE FROM {table}")
     try:
         cur.execute(
             "DELETE FROM sqlite_sequence WHERE name IN "
-            "('sources', 'findings', 'people', 'person_records', 'risks', 'rights_requests', 'breach_simulations', 'ledger', 'evidence_packs')"
+            "('sources', 'findings', 'people', 'person_records', 'risks', 'rights_requests', 'breach_simulations', 'ledger', 'evidence_packs', 'purpose_answers')"
         )
     except Exception:
         pass

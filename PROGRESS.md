@@ -12,3 +12,14 @@
   - Zero emojis across the entire app — all replaced with crisp SVG vector icons.
   - Snapshot test diff: empty text diff & identical element IDs across all routes.
   - All test suites passing (`python -m pytest -q`).
+
+- Purpose Mapping (Purpose Limitation Readiness):
+  - Added `purpose_answers` table in `app/schema.sql` (append-only audit trail with `superseded_by` tracking and CHECK constraint on status).
+  - Created `app/purposes.py` with vocabulary/preset loading, `infer_segment()`, `get_questions()` with progress tracking and unverified preset suggestions (omitted for `aadhaar`), `record_answer()` with validation and ledger integration, and `get_history()`.
+  - Added API endpoints in `app/routes.py`: `GET /api/purposes`, `GET /api/purpose-questions`, `POST /api/purpose-answers`, `GET /api/purpose-history`, and UI view `/purposes`.
+  - Updated `scripts/demo_reset.py` and `POST /api/reset` to cleanly wipe `purpose_answers` on demo reset.
+  - Created `/purposes` page (`templates/purposes.html`) with documentation progress bar, question cards with checkboxes, "I don't know" option, save controls, readiness aid disclaimer, and zero emojis.
+  - Updated `ENABLED_PAGES` and `base.html` navigation bar to include Purposes.
+  - Integrated `purposes.json` into evidence pack export (`app/ledger.py`) with manifest hashing.
+  - Added full test suite in `tests/test_purposes.py` covering all 7 requirement areas.
+
