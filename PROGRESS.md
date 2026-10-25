@@ -36,4 +36,14 @@
   - Only `app/detect.py` and `tests/test_hmac.py` touched; no other files changed.
   - demo_reset: 5 sources, 585 findings, 36 people. pytest: 213 passed, 1 skipped. eval demo: F1 0.99. eval heldout: F1 0.88.
 
+- Rule title fix in app/rules/rules.yaml:
+  - Renamed `notice_at_collection` title from "No notice at collection points" to "No notice at CCTV collection points" to match its CCTV-only trigger. id, trigger, decision and reason_codes unchanged.
+
+- Citation text updates in app/rules/retention.yaml and app/rules/rules.yaml:
+  - `appointments_form.csv` & `whatsapp_chat.txt`: updated citation_hint to "DPDP Act s.8(7) and s.12(3) - erasure when purpose no longer served or on request (verify against official text)".
+  - `patients.xlsx`: citation_hint updated to "Retention subject to applicable medical/clinical-establishment record rules and s.8(7) 'unless law requires retention'; verify with a professional" (removed s.7(i), verify: true).
+  - `billing.csv`: citation_hint updated to "Retention period set by applicable tax/accounting law; verify the period" (removed "7 years").
+  - `rules.yaml`: `aadhaar_in_chat` citation_hint updated to "s.8(5) safeguards; best practice (Aadhaar-specific rules are outside the DPDP Act)"; `breach_contact_process` updated to "s.8(6) breach intimation; s.8(9) contact point".
+  - Full test suite passing: 213 passed, 1 skipped.
+
 

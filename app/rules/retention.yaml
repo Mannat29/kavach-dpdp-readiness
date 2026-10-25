@@ -6,7 +6,7 @@ sources:
   appointments_form.csv:
     default_decision: ERASE
     reason_code: APPT_ERASE
-    citation_hint: "DPDP Act s.6(4) – data no longer necessary for purpose"
+    citation_hint: "DPDP Act s.8(7) and s.12(3) - erasure when purpose no longer served or on request (verify against official text)"
     verify: false
     fields:
       Timestamp: {decision: ERASE, reason_code: APPT_ERASE, citation_hint: "row sent by data principal, no longer needed"}
@@ -19,7 +19,7 @@ sources:
   whatsapp_chat.txt:
     default_decision: ERASE
     reason_code: CHAT_ERASE
-    citation_hint: "DPDP Act s.6(4) – chat lines sent by data principal"
+    citation_hint: "DPDP Act s.8(7) and s.12(3) - erasure when purpose no longer served or on request (verify against official text)"
     verify: false
     notes: "Erase lines SENT by the data principal; mask identifiers appearing in other people's lines"
     sent_by_principal: ERASE
@@ -28,7 +28,7 @@ sources:
   patients.xlsx:
     default_decision: RETAIN
     reason_code: PATIENT_RETAIN_REVIEW
-    citation_hint: "DPDP Act s.7(i) – medical records; verify retention period with medical professional"
+    citation_hint: "Retention subject to applicable medical/clinical-establishment record rules and s.8(7) 'unless law requires retention'; verify with a professional"
     verify: true
     fields:
       Phone: {decision: ERASE, reason_code: PATIENT_ID_ERASE, citation_hint: "identifier; no legal basis for retention", verify: false}
@@ -44,7 +44,7 @@ sources:
   billing.csv:
     default_decision: RETAIN
     reason_code: BILLING_RETAIN
-    citation_hint: "Tax/accounting record retention, verify period (typically 7 years)"
+    citation_hint: "Retention period set by applicable tax/accounting law; verify the period"
     verify: true
     fields:
       invoice_no: {decision: RETAIN, reason_code: BILLING_RETAIN, citation_hint: "tax/accounting record retention, verify period"}

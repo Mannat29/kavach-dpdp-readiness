@@ -16,7 +16,7 @@
 
 - id: "aadhaar_in_chat"
   title: "Aadhaar present in WhatsApp/chat or free text"
-  citation_hint: "s.8(5) security safeguards"
+  citation_hint: "s.8(5) safeguards; best practice (Aadhaar-specific rules are outside the DPDP Act)"
   severity: "critical"
   verify: true
   verified: false
@@ -84,7 +84,7 @@
     value: true
 
 - id: "notice_at_collection"
-  title: "No notice at collection points"
+  title: "No notice at CCTV collection points"
   citation_hint: "s.5 notice"
   severity: "med"
   verify: true
@@ -98,7 +98,7 @@
 
 - id: "breach_contact_process"
   title: "No breach contact/process"
-  citation_hint: "s.8(6) breach intimation"
+  citation_hint: "s.8(6) breach intimation; s.8(9) contact point"
   severity: "high"
   verify: true
   verified: false
