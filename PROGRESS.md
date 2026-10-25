@@ -29,4 +29,11 @@
   - Added `test_positive_control_hex_stripping_preserves_phone_detection()` to ensure genuine PII detection remains robust.
   - Full test suite passing (209 passed, 1 skipped).
 
+- Keyed HMAC-SHA256 upgrade in app/detect.py:
+  - Replaced `hashlib.sha256((salt + value).encode())` with `hmac.new(key_bytes, normalized.encode(), hashlib.sha256)` in `hash_value()`.
+  - Updated docstrings and warning text: now keyed HMAC, key from KAVACH_SALT or data/.salt (git-ignored); in production the key must be kept outside the database.
+  - Added `tests/test_hmac.py` (4 tests): deterministic output, differs from SHA-256 concatenation, changes when key changes, equal for same value in different formats via normalization.
+  - Only `app/detect.py` and `tests/test_hmac.py` touched; no other files changed.
+  - demo_reset: 5 sources, 585 findings, 36 people. pytest: 213 passed, 1 skipped. eval demo: F1 0.99. eval heldout: F1 0.88.
+
 

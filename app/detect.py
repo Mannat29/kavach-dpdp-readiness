@@ -1,6 +1,7 @@
 """PII detection module: pure functions, no I/O side effects."""
 from datetime import datetime
 import hashlib
+import hmac
 import logging
 import os
 import re
@@ -15,10 +16,10 @@ _warned_salt = False
 
 
 def get_salt() -> str:
-    """Read hashing salt from env KAVACH_SALT or data/.salt.
+    """Read HMAC key from env KAVACH_SALT or data/.salt.
 
-    If unset, generates a random salt, persists it to data/.salt (git-ignored),
-    and logs a warning once.
+    If unset, generates a random key, persists it to data/.salt (git-ignored),
+    and logs a warning once. In production the key must be kept outside the database.
     """
     global _warned_salt
     salt = os.environ.get("KAVACH_SALT")
@@ -47,8 +48,8 @@ def get_salt() -> str:
 
     if not _warned_salt:
         logger.warning(
-            "KAVACH_SALT environment variable is unset; generated random salt and saved to data/.salt. "
-            "Note: this is pseudonymisation, not anonymisation. In production, use keyed HMAC with a secret kept outside the database."
+            "KAVACH_SALT environment variable is unset; generated random key and saved to data/.salt (git-ignored). "
+            "Note: it is now keyed HMAC, key from KAVACH_SALT or data/.salt (git-ignored); in production the key must be kept outside the database."
         )
         _warned_salt = True
 
@@ -106,10 +107,10 @@ def mask_name(name: str) -> str:
 
 
 def hash_value(value: str, salt: Optional[str] = None) -> str:
-    """SHA-256 hash of salt + normalized value."""
-    s = salt if salt is not None else get_salt()
+    """Keyed HMAC-SHA256 hash of normalized value using key from KAVACH_SALT or data/.salt."""
+    key_bytes = (salt if salt is not None else get_salt()).encode("utf-8")
     normalized = re.sub(r"\s+", "", value).lower()
-    return hashlib.sha256((s + normalized).encode("utf-8")).hexdigest()
+    return hmac.new(key_bytes, normalized.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 # ---------------------------------------------------------------------------
