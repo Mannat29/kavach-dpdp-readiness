@@ -1347,3 +1347,28 @@ def api_purpose_history():
     history = get_history(source_id, header, category, conn)
     return jsonify({"history": history})
 
+
+@bp.route("/api/slm/suggest", methods=["POST"])
+def api_slm_suggest():
+    """Opt-in SLM suggestion route. Never writes to DB, ledger, or scoring pipeline."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Request body must be a JSON object"}), 400
+
+    if "text" not in data or not isinstance(data["text"], str):
+        return jsonify({"error": "Field 'text' is required and must be a string"}), 400
+
+    text = data["text"]
+    if len(text) > 4000:
+        return jsonify({"error": "Field 'text' exceeds maximum limit of 4000 characters"}), 400
+
+    from app.slm import scan_chunk
+    locator = {}
+    if "filename" in data and data["filename"] is not None:
+        locator["filename"] = str(data["filename"])
+    if "column" in data and data["column"] is not None:
+        locator["column"] = str(data["column"])
+        locator["column_name"] = str(data["column"])
+
+    result = scan_chunk(text, locator)
+    return jsonify(result), 200

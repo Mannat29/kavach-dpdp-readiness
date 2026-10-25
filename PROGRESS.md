@@ -67,3 +67,10 @@
   - Test suites passing: `tests/test_slm.py` (43 passed), full test suite (228 passed).
 
 
+
+- SLM Suggest API route (POST /api/slm/suggest):
+  - Added opt-in `POST /api/slm/suggest` in `app/routes.py` invoking `app.slm.scan_chunk()`.
+  - Input validation: requires JSON object, non-empty string `text` <= 4000 characters; returns 400 on violations.
+  - Zero DB writes, zero ledger writes, no scoring pipeline involvement. Returns 200 with mode off and empty findings by default.
+  - Added `tests/test_slm_route.py` covering default off mode, mock mode findings (no raw text in JSON), 400 on bad inputs, and table row count immutability verification.
+  - Tests passing: 232 passed; demo reset verified at 585 findings across 36 people.
